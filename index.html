@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#6C63FF" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TechRoadmap" />
+  <title>TechRoadmap Pro 🎯</title>
+  <link rel="manifest" href="manifest.json" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #07080D; color: #E2E4F0; font-family: "Inter", system-ui, sans-serif; }
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Fake window.storage using localStorage -->
+  <script>
+    window.storage = {
+      get: async function(key) {
+        try {
+          const val = localStorage.getItem(key);
+          if (val === null) throw new Error("not found");
+          return { value: val };
+        } catch(e) { throw e; }
+      },
+      set: async function(key, value) {
+        localStorage.setItem(key, value);
+        return { key, value };
+      },
+      delete: async function(key) {
+        localStorage.removeItem(key);
+        return { key, deleted: true };
+      },
+      list: async function(prefix) {
+        const keys = Object.keys(localStorage).filter(k => !prefix || k.startsWith(prefix));
+        return { keys };
+      }
+    };
+  </script>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+
+// ─────────────────────────────────────────────
+// PROGRAM DATA (6 phases, weeks, topics, quizzes)
+// ─────────────────────────────────────────────
+const PROGRAM = [
+  {
+    id:"p0",phase:0,title:"Fondations Absolues",duration:"Mois 1–2",color:"#6C63FF",accent:"#A89CFF",icon:"⚙️",
+    goal:"Comprendre comment fonctionne un ordinateur et coder tes premières lignes",
+    weeks:[
+      {id:"p0w1",week:1,title:"Architecture & Terminal",
+       topics:["CPU, RAM, stockage, OS","Binaire & hexadécimal","Installer Ubuntu / VirtualBox","Navigation terminal : ls, cd, mkdir, cp, chmod"],
+       project:"Installer Linux et naviguer dans le terminal sans aide",
+       resources:["CS50x – Harvard (edX)","Linux Command Line – W.Shotts"],
+       quiz:[
+         {q:"Que signifie CPU ?",choices:["Central Processing Unit","Computer Power Unit","Central Program Utility","Core Processing Unit"],a:0},
+         {q:"Quel est le résultat de 1010 en binaire converti en décimal ?",choices:["8","10","12","14"],a:1},
+         {q:"Quelle commande Linux affiche le contenu d'un dossier ?",choices:["cd","mkdir","ls","pwd"],a:2},
+         {q:"Qu'est-ce que la RAM ?",choices:["Stockage permanent","Mémoire vive temporaire","Processeur","Carte réseau"],a:1},
+       ]},
+      {id:"p0w2",week:2,title:"Réseaux & Premier code",
+       topics:["IP, DNS, HTTP, client/serveur","Python : variables, types, conditions","Python : boucles for/while","Exercices Codewars niveau 8 kyu"],
+       project:"Écrire un script Python qui devine un nombre aléatoire",
+       resources:["Automate the Boring Stuff with Python"],
+       quiz:[
+         {q:"Que fait une boucle 'for' en Python ?",choices:["Exécute du code une seule fois","Répète du code un nombre défini de fois","Arrête le programme","Déclare une variable"],a:1},
+         {q:"Quel protocole utilise le web (HTTP) par défaut ?",choices:["Port 22","Port 80","Port 443","Port 25"],a:1},
+         {q:"Quel type Python stocke du texte ?",choices:["int","bool","str","float"],a:2},
+         {q:"DNS signifie ?",choices:["Data Network System","Domain Name System","Digital Network Service","Direct Node Server"],a:1},
+       ]},
+      {id:"p0w3",week:3,title:"Python intermédiaire",
+       topics:["Fonctions et portée","Listes, tuples, dictionnaires","Lire/écrire fichiers","Modules os, sys, json"],
+       project:"Script qui lit un fichier JSON et affiche les données formatées",
+       resources:["Exercism.io – track Python"],
+       quiz:[
+         {q:"Comment définit-on une fonction en Python ?",choices:["function nom():","def nom():","func nom():","define nom():"],a:1},
+         {q:"Quelle structure Python stocke des paires clé-valeur ?",choices:["Liste","Tuple","Dictionnaire","Set"],a:2},
+         {q:"Quel module Python permet de lire des fichiers JSON ?",choices:["os","sys","json","file"],a:2},
+         {q:"Une variable définie dans une fonction est ?",choices:["Globale","Locale","Publique","Statique"],a:1},
+       ]},
+      {id:"p0w4",week:4,title:"Python – Gestion d'erreurs",
+       topics:["Gestion d'erreurs (try/except)","Modules datetime, math","50 exercices Codewars","Révision générale"],
+       project:"Calculatrice Python avec gestion de toutes les erreurs possibles",
+       resources:[],
+       quiz:[
+         {q:"Quelle syntaxe gère les erreurs en Python ?",choices:["if/else","try/except","catch/throw","error/handle"],a:1},
+         {q:"Quel module Python donne accès à la date actuelle ?",choices:["time","clock","datetime","calendar"],a:2},
+         {q:"Que fait 'math.sqrt(16)' ?",choices:["16²","√16 = 4","16/2","log(16)"],a:1},
+         {q:"Une exception non gérée en Python provoque ?",choices:["Un warning","Le programme continue","Un crash du programme","Un log silencieux"],a:2},
+       ]},
+      {id:"p0w5",week:5,title:"Git & Projet CSV",
+       topics:["Git : init, add, commit, push","GitHub : créer profil et dépôt","Lire fichiers CSV avec Python","Calcul de statistiques simples"],
+       project:"Script Python : lire CSV → calculer stats → afficher résultats",
+       resources:["Git Documentation officielle"],
+       quiz:[
+         {q:"Quelle commande Git enregistre les changements localement ?",choices:["git push","git pull","git commit","git add"],a:2},
+         {q:"CSV signifie ?",choices:["Comma Separated Values","Computer Storage Variable","Coded System Values","Central Server View"],a:0},
+         {q:"Quelle commande envoie les commits sur GitHub ?",choices:["git send","git push","git upload","git sync"],a:1},
+         {q:"Comment calculer la moyenne d'une liste Python ?",choices:["sum(l)","max(l)","sum(l)/len(l)","avg(l)"],a:2},
+       ]},
+      {id:"p0w6",week:6,title:"Linux avancé & Scripts",
+       topics:["Permissions, utilisateurs, groupes","Scripts bash basiques","Cron jobs","Révision générale Phase 0"],
+       project:"Automatiser une tâche quotidienne avec un script bash + cron",
+       resources:[],
+       quiz:[
+         {q:"Que fait 'chmod 755 fichier' ?",choices:["Supprime le fichier","Donne tous les droits au propriétaire, lecture/exécution aux autres","Chiffre le fichier","Crée un lien symbolique"],a:1},
+         {q:"Un cron job sert à ?",choices:["Gérer les utilisateurs","Planifier des tâches automatiques","Monitorer le réseau","Compiler du code"],a:1},
+         {q:"Quel shebang commence un script bash ?",choices:["#/bin/bash","#!/bin/bash","//bash","@bash"],a:1},
+         {q:"Quelle commande affiche le répertoire courant ?",choices:["ls","cd","pwd","dir"],a:2},
+       ]},
+      {id:"p0w7",week:7,title:"Mini-projet intégrateur",
+       topics:["Concevoir un programme Python complet","Utiliser Git tout au long","Documenter son code (docstrings)","README.md professionnel"],
+       project:"Gestionnaire de contacts en ligne de commande (Python + JSON)",
+       resources:[],
+       quiz:[
+         {q:"Une docstring Python est ?",choices:["Un commentaire #","Une chaîne de documentation entre triple guillemets","Un fichier README","Une variable globale"],a:1},
+         {q:"Un bon README doit contenir ?",choices:["Seulement le nom","Description, installation, usage, exemples","Le code source complet","Uniquement des screenshots"],a:1},
+         {q:"Quel format de fichier est idéal pour persister des données simples ?",choices:["EXE","DLL","JSON","BMP"],a:2},
+         {q:"Quelle commande Git montre l'historique des commits ?",choices:["git show","git log","git history","git trace"],a:1},
+       ]},
+      {id:"p0w8",week:8,title:"Bilan Phase 0",
+       topics:["Consolidation des acquis","Résoudre 10 exercices Codewars","Préparer environnement Phase 1","Publier 2 projets sur GitHub"],
+       project:"Portfolio GitHub : 2 projets publics avec README soignés",
+       resources:[],
+       quiz:[
+         {q:"Quelle est la complexité d'une recherche dans une liste non triée ?",choices:["O(1)","O(log n)","O(n)","O(n²)"],a:2},
+         {q:"Quel outil virtualise un environnement Python ?",choices:["docker","venv","conda","pip"],a:1},
+         {q:"Quelle commande installe un package Python ?",choices:["python install","pip install","apt install","brew install"],a:1},
+         {q:"Sur GitHub, un 'fork' sert à ?",choices:["Supprimer un repo","Copier un repo pour le modifier","Fusionner deux branches","Déployer une app"],a:1},
+       ]},
+    ]
+  },
+  {
+    id:"p1",phase:1,title:"Programmation Solide",duration:"Mois 3–6",color:"#00C9A7",accent:"#7FFFED",icon:"🐍",
+    goal:"Maîtriser Python, algorithmique et bases de données",
+    weeks:[
+      {id:"p1w1",week:1,title:"Algorithmique I",topics:["Complexité O(n)","Récursion","Tri par insertion, tri bulles","Recherche binaire"],project:"Implémenter 3 algorithmes de tri et comparer leurs performances",resources:["Grokking Algorithms"],quiz:[{q:"Quelle est la complexité du tri bulles ?",choices:["O(1)","O(n)","O(n²)","O(log n)"],a:2},{q:"La récursion nécessite obligatoirement ?",choices:["Une boucle","Un cas de base","Une liste","Un import"],a:1},{q:"La recherche binaire fonctionne sur ?",choices:["N'importe quelle liste","Une liste triée uniquement","Une liste non triée","Un dictionnaire"],a:1},{q:"O(log n) signifie que l'algorithme est ?",choices:["Lent","Très rapide, croissance logarithmique","Linéaire","Quadratique"],a:1}]},
+      {id:"p1w2",week:2,title:"Structures de données I",topics:["Listes chaînées","Piles et files","Implémentation en Python","Exercices LeetCode Easy"],project:"Implémenter une pile et une file from scratch",resources:[],quiz:[{q:"Une pile (stack) suit le principe ?",choices:["FIFO","LIFO","Aléatoire","Trié"],a:1},{q:"Une file (queue) suit le principe ?",choices:["LIFO","FIFO","Aléatoire","Alphabétique"],a:1},{q:"Dans une liste chaînée, chaque nœud contient ?",choices:["Seulement une valeur","Une valeur et un pointeur vers le suivant","Un index","Une clé et une valeur"],a:1},{q:"Quelle structure est idéale pour annuler des actions (Ctrl+Z) ?",choices:["File","Arbre","Pile","Graphe"],a:2}]},
+      {id:"p1w3",week:3,title:"Structures de données II",topics:["Arbres binaires","Graphes (BFS, DFS)","Tables de hachage","5 LeetCode Easy"],project:"Implémenter un arbre binaire de recherche",resources:[],quiz:[{q:"BFS signifie ?",choices:["Binary File System","Breadth-First Search","Basic Function Scan","Buffer File Storage"],a:1},{q:"Une table de hachage a une complexité de recherche ?",choices:["O(n)","O(n²)","O(1) en moyenne","O(log n)"],a:2},{q:"DFS explore un graphe ?",choices:["En largeur d'abord","En profondeur d'abord","Aléatoirement","Par poids"],a:1},{q:"Un arbre binaire de recherche garantit ?",choices:["Que l'arbre est équilibré","Que fils gauche < nœud < fils droit","Que tous les nœuds sont feuilles","Une complexité O(1)"],a:1}]},
+      {id:"p1w4",week:4,title:"POO Python",topics:["Classes et objets","Héritage et polymorphisme","Méthodes spéciales","Encapsulation"],project:"Système de gestion d'une bibliothèque (POO complète)",resources:[],quiz:[{q:"__init__ en Python est ?",choices:["Un destructeur","Le constructeur de la classe","Une méthode statique","Un décorateur"],a:1},{q:"L'héritage permet ?",choices:["De cacher des attributs","De réutiliser le code d'une classe parente","De créer des boucles","D'importer des modules"],a:1},{q:"__str__ est appelé quand ?",choices:["On instancie la classe","On affiche l'objet avec print()","On supprime l'objet","On compare deux objets"],a:1},{q:"L'encapsulation sert à ?",choices:["Accélérer le code","Cacher et protéger les données internes","Hériter d'une classe","Créer des interfaces"],a:1}]},
+      {id:"p1w5",week:5,title:"Python avancé",topics:["Décorateurs","Générateurs et yield","Context managers","Compréhensions"],project:"Bibliothèque utilitaire personnelle avec décorateurs de logging et timing",resources:[],quiz:[{q:"Un décorateur Python ?",choices:["Crée une classe","Modifie le comportement d'une fonction","Importe un module","Gère les erreurs"],a:1},{q:"'yield' dans une fonction crée ?",choices:["Une exception","Un générateur","Un décorateur","Une classe"],a:1},{q:"[x**2 for x in range(5)] est ?",choices:["Une liste chaînée","Une compréhension de liste","Un générateur","Un tuple"],a:1},{q:"'with open(f) as f:' utilise ?",choices:["Un décorateur","Un générateur","Un context manager","Une compréhension"],a:2}]},
+      {id:"p1w6",week:6,title:"Tests & Qualité",topics:["pytest : tests unitaires","Environnements virtuels venv","Linting avec flake8","Documentation Sphinx"],project:"Suite de tests complète pour tes projets précédents",resources:[],quiz:[{q:"Un test unitaire teste ?",choices:["Le système entier","Une seule fonction/méthode isolée","L'interface utilisateur","La base de données"],a:1},{q:"pytest.raises() sert à ?",choices:["Ignorer les erreurs","Vérifier qu'une exception est bien levée","Créer des fixtures","Logger les tests"],a:1},{q:"flake8 est un ?",choices:["Framework de test","Linter de style de code","Gestionnaire de paquets","Débogueur"],a:1},{q:"Un environnement virtuel Python isole ?",choices:["Le réseau","Les dépendances du projet","La mémoire RAM","Le processeur"],a:1}]},
+      {id:"p1w7",week:7,title:"SQL I",topics:["Bases relationnelles","SELECT, WHERE, ORDER BY","JOINs (INNER, LEFT, RIGHT)","SQLite avec Python"],project:"BDD d'une école avec requêtes complexes (notes, étudiants, cours)",resources:[],quiz:[{q:"SQL signifie ?",choices:["Structured Query Language","Simple Query List","System Query Logic","Standard Question Language"],a:0},{q:"INNER JOIN retourne ?",choices:["Toutes les lignes de la table gauche","Toutes les lignes des deux tables","Seulement les lignes correspondantes","Aucune ligne"],a:2},{q:"GROUP BY sert à ?",choices:["Trier les résultats","Regrouper les lignes par valeur commune","Filtrer les doublons","Limiter les résultats"],a:1},{q:"Quelle clause filtre les groupes dans SQL ?",choices:["WHERE","FILTER","HAVING","GROUP FILTER"],a:2}]},
+      {id:"p1w8",week:8,title:"SQL II + PostgreSQL",topics:["GROUP BY, HAVING","Sous-requêtes","Installer PostgreSQL","psycopg2 en Python"],project:"API de statistiques avec PostgreSQL + requêtes avancées",resources:[],quiz:[{q:"Une sous-requête est ?",choices:["Une vue SQL","Une requête dans une requête","Un index","Une procédure stockée"],a:1},{q:"psycopg2 est ?",choices:["Un ORM Python","Le driver Python pour PostgreSQL","Un framework web","Un outil de migration"],a:1},{q:"INDEX en SQL sert à ?",choices:["Trier les données","Accélérer les recherches","Créer des relations","Chiffrer les données"],a:1},{q:"PRIMARY KEY garantit ?",choices:["Que la valeur est un nombre","Unicité et non-nullité","Que la colonne est indexée","Une relation foreign key"],a:1}]},
+      {id:"p1w9",week:9,title:"Web : HTML/CSS",topics:["Structure HTML sémantique","CSS : flexbox, grid","Responsive design","Objectif : comprendre le web"],project:"Page web statique responsive présentant ton portfolio",resources:["The Odin Project"],quiz:[{q:"Balise HTML pour un titre principal ?",choices:["<title>","<h1>","<header>","<main>"],a:1},{q:"CSS Flexbox est utilisé pour ?",choices:["Créer des animations","Mettre en page des éléments en ligne","Ajouter des couleurs","Gérer les polices"],a:1},{q:"'@media' en CSS sert à ?",choices:["Insérer des images","Importer des polices","Adapter le style selon la taille d'écran","Créer des animations"],a:2},{q:"La balise HTML5 sémantique pour la navigation est ?",choices:["<div>","<navigation>","<nav>","<menu>"],a:2}]},
+      {id:"p1w10",week:10,title:"Flask I",topics:["Routes et vues","Templates Jinja2","Formulaires","Sessions"],project:"Site web complet avec authentification (login/logout)",resources:[],quiz:[{q:"Flask est un ?",choices:["Framework frontend","Micro-framework web Python","Base de données","Serveur web"],a:1},{q:"Jinja2 permet de ?",choices:["Connecter à une BDD","Insérer du Python dans des templates HTML","Tester le code","Gérer les sessions"],a:1},{q:"@app.route('/') décore ?",choices:["Une classe","Une variable","Une fonction de vue","Un template"],a:2},{q:"Une session Flask stocke des données ?",choices:["En base de données","Côté serveur en mémoire","Dans un cookie signé","Dans un fichier"],a:2}]},
+      {id:"p1w11",week:11,title:"Flask II – API REST",topics:["Architecture REST","GET, POST, PUT, DELETE","Retourner du JSON","Postman pour tester"],project:"API REST complète avec Flask + PostgreSQL + tests Postman",resources:[],quiz:[{q:"REST signifie ?",choices:["Real-time Server Technology","Representational State Transfer","Remote Execution Standard","Request-Response Service Type"],a:1},{q:"Quelle méthode HTTP crée une ressource ?",choices:["GET","DELETE","POST","PATCH"],a:2},{q:"Code HTTP 404 signifie ?",choices:["Succès","Ressource non trouvée","Erreur serveur","Authentification requise"],a:1},{q:"JSON signifie ?",choices:["Java Syntax Object Notation","JavaScript Object Notation","Java Standard Output Node","Just Some Object Names"],a:1}]},
+      {id:"p1w12",week:12,title:"Projet final Phase 1",topics:["Intégrer : Python, SQL, Flask, Git","Tests automatisés","Déployer sur Railway ou Render","Documenter et présenter"],project:"Système de gestion complet déployé en ligne + README professionnel",resources:[],quiz:[{q:"Railway/Render sont des services ?",choices:["De base de données","PaaS (Platform as a Service)","De CDN","De monitoring"],a:1},{q:"CI/CD signifie ?",choices:["Code Integration / Code Delivery","Continuous Integration / Continuous Deployment","Computer Interface / Computer Design","Core Infrastructure / Core Development"],a:1},{q:"Un fichier requirements.txt contient ?",choices:["La configuration du serveur","Les dépendances Python du projet","Les variables d'environnement","Les routes de l'API"],a:1},{q:"Un fichier .env sert à ?",choices:["Stocker le code source","Définir les variables d'environnement sensibles","Configurer Git","Lister les tests"],a:1}]},
+    ]
+  },
+  {
+    id:"p2",phase:2,title:"Data Engineering & IA",duration:"Mois 7–12",color:"#FF6B6B",accent:"#FFB3B3",icon:"📊",
+    goal:"Manipuler des données à grande échelle et construire tes premiers modèles ML",
+    weeks:[
+      {id:"p2w1",week:1,title:"Pandas & NumPy",topics:["DataFrames : création, filtrage","Agrégations et groupby","NumPy : arrays, broadcasting","Visualisation Matplotlib"],project:"Analyse exploratoire d'un dataset public (Kaggle)",resources:["Fundamentals of Data Engineering"],quiz:[{q:"Pandas est principalement utilisé pour ?",choices:["Créer des APIs","Manipuler des données tabulaires","Entraîner des modèles","Gérer des serveurs"],a:1},{q:"df.groupby('col').mean() calcule ?",choices:["Le max par groupe","La moyenne par groupe","Le total global","La médiane globale"],a:1},{q:"NumPy broadcasting permet ?",choices:["D'envoyer des données sur le réseau","D'opérer sur des arrays de formes différentes","De diffuser des logs","De paralléliser le code"],a:1},{q:"Matplotlib est une bibliothèque de ?",choices:["Machine learning","Visualisation de données","Traitement du texte","Gestion de BDD"],a:1}]},
+      {id:"p2w2",week:2,title:"Docker",topics:["Conteneurs vs VMs","Images, volumes, réseaux","Dockerfile","docker-compose"],project:"Containeriser ton app Flask avec Docker + docker-compose",resources:[],quiz:[{q:"Un conteneur Docker est ?",choices:["Une machine virtuelle complète","Un processus isolé avec ses dépendances","Un serveur physique","Un service cloud"],a:1},{q:"Un Dockerfile sert à ?",choices:["Configurer le réseau","Définir comment construire une image","Gérer les volumes","Lister les conteneurs"],a:1},{q:"docker-compose est utilisé pour ?",choices:["Construire des images","Orchestrer plusieurs conteneurs","Monitorer les logs","Gérer les secrets"],a:1},{q:"La commande pour construire une image est ?",choices:["docker run","docker start","docker build","docker create"],a:2}]},
+      {id:"p2w3",week:3,title:"Architecture Data",topics:["Data warehouse vs data lake","ETL vs ELT","Schéma en étoile/flocon","Formats : Parquet, Avro, JSON"],project:"Schéma d'architecture d'un data warehouse pour une boutique en ligne",resources:["Data Engineering Zoomcamp (DataTalks.Club)"],quiz:[{q:"Un Data Lake stocke ?",choices:["Uniquement des données structurées","Des données brutes dans leur format d'origine","Uniquement des données traitées","Des données en temps réel uniquement"],a:1},{q:"ETL signifie ?",choices:["Extract Transform Load","Execute Test Launch","Event Trigger Logic","Enterprise Tech Layer"],a:0},{q:"Le format Parquet est ?",choices:["Un format de texte brut","Un format JSON optimisé","Un format colonnaire compressé","Un format XML"],a:2},{q:"Un schéma en étoile a ?",choices:["Une table de faits centrale et des tables de dimensions","Plusieurs tables de faits liées","Uniquement des tables normalisées","Pas de clés étrangères"],a:0}]},
+      {id:"p2w4",week:4,title:"AWS Bases",topics:["S3 : stockage objet","EC2 : serveurs virtuels","RDS : bases managées","Lambda : serverless"],project:"Déployer un pipeline simple sur AWS (S3 + Lambda)",resources:[],quiz:[{q:"AWS S3 est un service de ?",choices:["Calcul","Stockage objet","Base de données","Réseau"],a:1},{q:"Lambda est un service ?",choices:["De stockage","De calcul serverless","De mise en réseau","De monitoring"],a:1},{q:"RDS signifie ?",choices:["Remote Data System","Relational Database Service","Rapid Deployment Server","Real-time Data Stream"],a:1},{q:"EC2 fournit ?",choices:["Du stockage objet","Des fonctions serverless","Des machines virtuelles","Des bases de données"],a:2}]},
+      {id:"p2w5",week:5,title:"Apache Airflow",topics:["DAGs et tâches","Opérateurs Python, Bash, SQL","Scheduling","Monitoring pipelines"],project:"Pipeline Airflow : extraction API → transformation → chargement BDD",resources:[],quiz:[{q:"DAG signifie ?",choices:["Data Aggregation Gateway","Directed Acyclic Graph","Dynamic Action Group","Data Access Grid"],a:1},{q:"Un DAG Airflow est ?",choices:["Une base de données","Un workflow de tâches sans cycle","Un type de requête SQL","Un conteneur Docker"],a:1},{q:"Le scheduling Airflow utilise ?",choices:["Une syntaxe SQL","La syntaxe cron","Des fichiers JSON","Des webhooks"],a:1},{q:"Un opérateur Airflow définit ?",choices:["Une connexion réseau","L'ordre des tâches","Une unité de travail atomique","Un modèle ML"],a:2}]},
+      {id:"p2w6",week:6,title:"dbt",topics:["Transformation SQL dans le warehouse","Models, tests, documentation","Sources et refs","Matérialisations"],project:"Pipeline complet : API météo → PostgreSQL → dbt → dashboard Grafana",resources:[],quiz:[{q:"dbt transforme les données ?",choices:["Lors de l'ingestion","Dans le data warehouse avec SQL","Avant le chargement","En temps réel uniquement"],a:1},{q:"Une matérialisation dbt 'table' crée ?",choices:["Une vue SQL","Une table physique dans le warehouse","Un fichier CSV","Un modèle ML"],a:1},{q:"dbt test permet de ?",choices:["Tester le code Python","Valider la qualité des données","Monitorer les performances","Tester les APIs"],a:1},{q:"'ref()' dans dbt sert à ?",choices:["Référencer un autre modèle dbt","Appeler une API externe","Définir une source","Créer un test"],a:0}]},
+      {id:"p2w7",week:7,title:"Maths ML I – Algèbre",topics:["Vecteurs et matrices","Produit scalaire et matriciel","Valeurs propres (intuition)","Implémentation NumPy"],project:"Implémenter une régression linéaire from scratch avec NumPy",resources:["3Blue1Brown – Essence of Linear Algebra (YouTube)"],quiz:[{q:"Le produit matriciel AB est possible si ?",choices:["A et B ont les mêmes dimensions","Le nombre de colonnes de A = nombre de lignes de B","A et B sont carrées","A et B sont symétriques"],a:1},{q:"Le produit scalaire de deux vecteurs orthogonaux vaut ?",choices:["1","-1","0","Indéfini"],a:2},{q:"La transposée d'une matrice (2×3) est une matrice ?",choices:["2×3","3×2","2×2","3×3"],a:1},{q:"Les valeurs propres d'une matrice représentent ?",choices:["Les dimensions de la matrice","Les directions invariantes par la transformation","La somme des éléments","Le rang de la matrice"],a:1}]},
+      {id:"p2w8",week:8,title:"Maths ML II – Stats",topics:["Probabilités : distributions","Statistiques : corrélation, régression","Dérivées et gradient","Descente de gradient"],project:"Visualiser la descente de gradient sur une fonction quadratique",resources:["StatQuest – Josh Starmer (YouTube)"],quiz:[{q:"La descente de gradient minimise ?",choices:["Le nombre de paramètres","La fonction de coût/perte","La complexité du modèle","Le nombre d'itérations"],a:1},{q:"Le taux d'apprentissage (learning rate) contrôle ?",choices:["La taille du dataset","La profondeur du réseau","La taille des pas de la descente de gradient","Le nombre d'époques"],a:2},{q:"La corrélation de Pearson varie entre ?",choices:["0 et 1","-1 et 1","0 et ∞","-∞ et +∞"],a:1},{q:"La loi normale est aussi appelée ?",choices:["Loi de Poisson","Distribution uniforme","Distribution gaussienne","Loi binomiale"],a:2}]},
+      {id:"p2w9",week:9,title:"ML Supervisé I",topics:["Régression linéaire et logistique","Arbres de décision","Random Forest","Scikit-learn pipeline"],project:"Modèle de prédiction prix immobiliers (dataset Boston/California)",resources:["Hands-On Machine Learning – A.Géron"],quiz:[{q:"La régression logistique prédit ?",choices:["Une valeur continue","Une probabilité de classe","Un cluster","Une anomalie"],a:1},{q:"Un Random Forest est ?",choices:["Un seul arbre très profond","Un ensemble d'arbres de décision","Un réseau de neurones","Un algorithme de clustering"],a:1},{q:"L'overfitting signifie ?",choices:["Le modèle est trop simple","Le modèle mémorise les données d'entraînement au lieu de généraliser","Le modèle ne converge pas","Le dataset est trop grand"],a:1},{q:"La validation croisée (cross-validation) sert à ?",choices:["Accélérer l'entraînement","Évaluer le modèle sur plusieurs découpages train/test","Réduire le nombre de features","Normaliser les données"],a:1}]},
+      {id:"p2w10",week:10,title:"ML Supervisé II",topics:["SVM","KNN","Métriques : F1, AUC-ROC","Overfitting, régularisation"],project:"Classificateur de spam email avec comparaison de modèles",resources:[],quiz:[{q:"Le score F1 combine ?",choices:["Accuracy et recall","Précision et recall","Précision et spécificité","Recall et AUC"],a:1},{q:"KNN classe un point selon ?",choices:["Un hyperplan","Ses k voisins les plus proches","La moyenne du dataset","Un arbre de décision"],a:1},{q:"La régularisation L2 (Ridge) pénalise ?",choices:["Les grands coefficients au carré","Les coefficients nuls","La complexité architecturale","Le learning rate"],a:0},{q:"AUC-ROC mesure ?",choices:["La vitesse du modèle","La capacité à distinguer les classes","La taille du modèle","Le taux d'erreur"],a:1}]},
+      {id:"p2w11",week:11,title:"ML Non-supervisé",topics:["KMeans clustering","PCA : réduction dimensionnelle","DBSCAN","Visualisation t-SNE"],project:"Segmentation clients sur un dataset e-commerce",resources:[],quiz:[{q:"KMeans nécessite de spécifier ?",choices:["Les labels","Le nombre de clusters K","Le taux d'apprentissage","La profondeur"],a:1},{q:"PCA sert à ?",choices:["Classifier des données","Réduire la dimensionnalité","Détecter des anomalies","Normaliser les données"],a:1},{q:"t-SNE est principalement utilisé pour ?",choices:["L'entraînement de modèles","La visualisation de données haute dimension","La réduction de bruit","Le clustering"],a:1},{q:"DBSCAN détecte ?",choices:["Uniquement des clusters sphériques","Des clusters de formes arbitraires et des anomalies","Le nombre optimal de clusters","Des relations linéaires"],a:1}]},
+      {id:"p2w12",week:12,title:"Projet final Phase 2",topics:["Pipeline data complet","Modèle ML en production","API Flask exposant le modèle","Dashboard de visualisation"],project:"Système de recommandation déployé + dashboard temps réel",resources:[],quiz:[{q:"MLflow sert à ?",choices:["Déployer des apps web","Tracker les expériences ML et versionner les modèles","Gérer les bases de données","Orchestrer des pipelines"],a:1},{q:"Une API qui expose un modèle ML reçoit généralement ?",choices:["Du code Python","Des features en JSON et retourne une prédiction","Des images brutes","Des fichiers CSV"],a:1},{q:"Le concept de 'feature store' est ?",choices:["Un magasin de données","Un registre centralisé de features ML réutilisables","Un type de modèle","Un outil de visualisation"],a:1},{q:"Le data drift désigne ?",choices:["Une erreur de pipeline","Le changement de distribution des données en production","Un bug de modèle","Un problème de latence"],a:1}]},
+    ]
+  },
+  {
+    id:"p3",phase:3,title:"Cybersécurité",duration:"Mois 13–18",color:"#F7C948",accent:"#FFE89A",icon:"🔐",
+    goal:"Comprendre comment les systèmes sont attaqués et les défendre",
+    weeks:[
+      {id:"p3w1",week:1,title:"Cryptographie",topics:["Chiffrement symétrique (AES)","Chiffrement asymétrique (RSA)","Hachage SHA-256","TLS/SSL : comment HTTPS fonctionne"],project:"Implémenter un système de chiffrement/déchiffrement en Python",resources:["TryHackMe – parcours débutant"],quiz:[{q:"AES est un chiffrement ?",choices:["Asymétrique","Symétrique","Par hachage","Par substitution simple"],a:1},{q:"RSA utilise ?",choices:["Une seule clé","Une paire clé publique/privée","Un hash","Un certificat uniquement"],a:1},{q:"SHA-256 est une fonction de ?",choices:["Chiffrement","Compression","Hachage unidirectionnel","Signature"],a:2},{q:"TLS protège les données ?",choices:["Au repos","En transit","Dans la base de données","Dans le code source"],a:1}]},
+      {id:"p3w2",week:2,title:"Réseaux avancés",topics:["TCP/IP en profondeur","Wireshark : analyser le trafic","Firewalls et VPN","ARP, DHCP, DNS en détail"],project:"Capturer et analyser du trafic HTTP/HTTPS avec Wireshark",resources:[],quiz:[{q:"Le modèle OSI comporte combien de couches ?",choices:["4","5","7","9"],a:2},{q:"ARP résout ?",choices:["Un nom de domaine en IP","Une IP en adresse MAC","Un port en service","Un URL en chemin"],a:1},{q:"Un firewall stateful inspecte ?",choices:["Seulement les en-têtes","L'état des connexions","Uniquement les adresses IP","Le contenu des paquets chiffrés"],a:1},{q:"Wireshark est un ?",choices:["Scanner de ports","Analyseur de trafic réseau (sniffer)","Framework d'exploitation","Scanner de vulnérabilités"],a:1}]},
+      {id:"p3w3",week:3,title:"Linux avancé Sécu",topics:["Permissions avancées (SUID, SGID)","Processus et signaux","Logs système : /var/log","Kali Linux : installation"],project:"Audit de sécurité d'un système Linux local",resources:[],quiz:[{q:"SUID sur un exécutable permet ?",choices:["Exécution sans permission","Exécution avec les droits du propriétaire","Lecture seule","Chiffrement automatique"],a:1},{q:"La commande 'ps aux' affiche ?",choices:["Les fichiers ouverts","Tous les processus en cours","Les connexions réseau","Les logs"],a:1},{q:"Kali Linux est une distribution ?",choices:["Pour les serveurs web","Spécialisée en cybersécurité / pentest","Pour le développement","Pour les débutants Linux"],a:1},{q:"/var/log/auth.log contient ?",choices:["Les logs Apache","Les logs d'authentification","Les logs kernel","Les logs réseau"],a:1}]},
+      {id:"p3w4",week:4,title:"OWASP Top 10",topics:["Injection SQL","XSS (Cross-Site Scripting)","CSRF","Broken Authentication"],project:"Exploiter et corriger les vulnérabilités OWASP sur DVWA",resources:["The Web Application Hacker's Handbook"],quiz:[{q:"Une injection SQL consiste à ?",choices:["Injecter du HTML","Insérer du code SQL malveillant dans une requête","Envoyer trop de requêtes","Voler des cookies"],a:1},{q:"XSS stored est plus dangereux que XSS reflected car ?",choices:["Il est plus rapide","Le script malveillant est persisté en base de données","Il cible uniquement l'attaquant","Il ne nécessite pas de JavaScript"],a:1},{q:"CSRF force ?",choices:["Une injection SQL","Un utilisateur authentifié à exécuter une action non voulue","Un vol de session","Une déni de service"],a:1},{q:"La protection CSRF la plus courante est ?",choices:["HTTPS","Un token CSRF unique par formulaire","Le chiffrement RSA","Un firewall"],a:1}]},
+      {id:"p3w5",week:5,title:"Reconnaissance",topics:["OSINT : collecte d'info passive","Nmap : scan de ports","Shodan","Maltego bases"],project:"Rapport de reconnaissance OSINT sur une cible autorisée",resources:[],quiz:[{q:"OSINT signifie ?",choices:["Online Security Intelligence","Open Source Intelligence","Offensive Security Intrusion Test","Operational System Integrity Network"],a:1},{q:"Nmap est principalement utilisé pour ?",choices:["Analyser des malwares","Scanner des ports et services réseau","Déchiffrer des communications","Créer des backdoors"],a:1},{q:"Shodan est un moteur de recherche pour ?",choices:["Les vulnérabilités CVE","Les appareils connectés à Internet","Les emails","Les domaines expirés"],a:1},{q:"La reconnaissance passive diffère de la reconnaissance active car ?",choices:["Elle est plus rapide","Elle n'interagit pas directement avec la cible","Elle est illégale","Elle nécessite plus d'outils"],a:1}]},
+      {id:"p3w6",week:6,title:"Exploitation I",topics:["Enumération des services","Metasploit Framework bases","Exploitation vulnérabilités connues","Lab VirtualBox : Metasploitable"],project:"Premier pentest complet sur machine Metasploitable (lab local)",resources:[],quiz:[{q:"Metasploit est un ?",choices:["Antivirus","Framework d'exploitation de vulnérabilités","Scanner réseau","Analyseur de logs"],a:1},{q:"Un exploit est ?",choices:["Un outil de défense","Un code qui tire profit d'une vulnérabilité","Un type de malware","Un protocole réseau"],a:1},{q:"CVE signifie ?",choices:["Common Vulnerability Exposure","Critical Vulnerability Entry","Certified Vulnerability Expert","Common Vulnerabilities and Exposures"],a:3},{q:"Le terme 'payload' en pentest désigne ?",choices:["Les données volées","Le code exécuté après l'exploitation","Le rapport du pentest","Le scanner utilisé"],a:1}]},
+      {id:"p3w7",week:7,title:"Exploitation II",topics:["Buffer overflow","Privilege escalation Linux","Privilege escalation Windows","Post-exploitation"],project:"Exploiter un buffer overflow sur un programme vulnérable (lab)",resources:["Hacking: The Art of Exploitation"],quiz:[{q:"Un buffer overflow exploite ?",choices:["Une mauvaise authentification","L'écriture au-delà des limites d'un buffer mémoire","Une injection SQL","Un mauvais chiffrement"],a:1},{q:"Privilege escalation vise à ?",choices:["Obtenir l'accès initial","Passer de droits limités à des droits administrateur","Exfiltrer des données","Effacer les traces"],a:1},{q:"'SUID bit' peut être exploité pour ?",choices:["Lire des fichiers chiffrés","Obtenir des privilèges root","Scanner le réseau","Créer des backdoors"],a:1},{q:"La phase de post-exploitation inclut ?",choices:["La reconnaissance","La persistance et l'exfiltration de données","L'exploitation initiale","Le scan de ports"],a:1}]},
+      {id:"p3w8",week:8,title:"Web Hacking",topics:["Burp Suite : intercepter requêtes","SQLi manuelle (SQLmap)","XSS stored, reflected, DOM","SSRF, LFI, RFI"],project:"Rapport de pentest web complet sur une application vulnérable",resources:["PentesterLab"],quiz:[{q:"Burp Suite intercepte ?",choices:["Le trafic réseau brut","Les requêtes HTTP entre le navigateur et le serveur","Les logs système","Les connexions SSH"],a:1},{q:"LFI (Local File Inclusion) permet ?",choices:["D'uploader des fichiers","D'inclure des fichiers locaux du serveur dans la réponse","De modifier la base de données","De scanner les ports"],a:1},{q:"SQLmap automatise ?",choices:["Les tests XSS","La détection et exploitation d'injections SQL","Le scan de ports","Les attaques CSRF"],a:1},{q:"SSRF force le serveur à ?",choices:["Exécuter du JavaScript","Effectuer des requêtes vers des ressources internes","Révéler ses logs","Planter"],a:1}]},
+      {id:"p3w9",week:9,title:"Active Directory",topics:["Architecture AD","Kerberoasting","Pass the Hash","BloodHound"],project:"Attaquer un domaine Active Directory dans un lab VirtualBox",resources:[],quiz:[{q:"Active Directory est ?",choices:["Un système de fichiers","Un service d'annuaire Microsoft pour gérer identités et accès","Un protocole réseau","Un type de firewall"],a:1},{q:"Kerberoasting cible ?",choices:["Les mots de passe en clair","Les tickets Kerberos des comptes de service","Les hachages NTLM","Les certificats SSL"],a:1},{q:"BloodHound visualise ?",choices:["Le trafic réseau","Les chemins d'attaque dans un Active Directory","Les vulnérabilités CVE","Les logs d'événements"],a:1},{q:"Pass the Hash utilise ?",choices:["Le mot de passe en clair","Le hash NTLM pour s'authentifier sans connaître le mot de passe","Un ticket Kerberos","Un certificat"],a:1}]},
+      {id:"p3w10",week:10,title:"Blue Team I",topics:["SIEM : Splunk/ELK bases","Détection d'intrusion (Snort)","Analyse de logs","Forensics : volatility"],project:"Détecter une attaque simulée avec un SIEM ELK Stack",resources:[],quiz:[{q:"SIEM signifie ?",choices:["Security Information and Event Management","System Intrusion Event Monitor","Secure Infrastructure Event Manager","System Intelligence Event Module"],a:0},{q:"Snort est un ?",choices:["Scanner de vulnérabilités","Système de détection/prévention d'intrusion (IDS/IPS)","Framework de pentest","Analyseur de malwares"],a:1},{q:"Volatility analyse ?",choices:["Des logs réseau","Des dumps mémoire RAM","Des fichiers système","Du trafic chiffré"],a:1},{q:"Un IOC (Indicator of Compromise) est ?",choices:["Un outil de pentest","Un artefact prouvant une compromission","Un type de firewall","Un protocole réseau"],a:1}]},
+      {id:"p3w11",week:11,title:"Blue Team II + CTF",topics:["Incident response","Threat hunting","CTFtime.org : 1 CTF complet","HackTheBox : 2 machines Easy"],project:"Rapport d'incident response complet sur un scénario simulé",resources:[],quiz:[{q:"Threat hunting est une approche ?",choices:["Réactive face aux alertes","Proactive : chercher des menaces avant qu'elles se déclenchent","Automatisée uniquement","Limitée aux firewalls"],a:1},{q:"Un CTF (Capture The Flag) est ?",choices:["Un exercice militaire","Une compétition de cybersécurité avec des défis pratiques","Un type d'attaque","Un standard de sécurité"],a:1},{q:"La première étape d'un incident response est ?",choices:["Éradication","Identification / Détection","Récupération","Leçons apprises"],a:1},{q:"MITRE ATT&CK est ?",choices:["Un outil de pentest","Un framework de tactiques et techniques d'attaquants","Un antivirus","Un standard de chiffrement"],a:1}]},
+      {id:"p3w12",week:12,title:"Certif & Projet final",topics:["Révision CompTIA Security+","Scanner vulnérabilités Python","Honeypot : observer attaques","HackTheBox : machine Medium"],project:"Scanner de vulnérabilités Python + rapport automatisé PDF",resources:[],quiz:[{q:"CompTIA Security+ est une certification ?",choices:["De niveau expert","D'entrée en cybersécurité, reconnue mondialement","Uniquement valable aux USA","Liée à un éditeur spécifique"],a:1},{q:"Un honeypot est ?",choices:["Un outil d'attaque","Un système leurre pour attirer et observer les attaquants","Un antivirus","Un type de chiffrement"],a:1},{q:"CVSSv3 est un système pour ?",choices:["Scanner des ports","Scorer la sévérité des vulnérabilités","Gérer les incidents","Chiffrer les données"],a:1},{q:"OSCP est une certification qui valide ?",choices:["Des connaissances théoriques","Des compétences pratiques de pentest offensif","La gestion des incidents","L'architecture réseau"],a:1}]},
+    ]
+  },
+  {
+    id:"p4",phase:4,title:"IA Avancée + Cloud",duration:"Mois 19–24",color:"#4FACFE",accent:"#A8DAFF",icon:"🤖",
+    goal:"Maîtriser le deep learning, les LLMs et le déploiement en production",
+    weeks:[
+      {id:"p4w1",week:1,title:"Réseaux de neurones",topics:["Perceptron et MLP","Backpropagation","Fonctions d'activation","From scratch en NumPy"],project:"Implémenter un réseau de neurones from scratch sans librairie ML",resources:["Andrej Karpathy – YouTube"],quiz:[{q:"La backpropagation calcule ?",choices:["Les prédictions","Le gradient de la loss par rapport aux poids","La structure du réseau","Le nombre de neurones"],a:1},{q:"ReLU est une fonction d'activation qui retourne ?",choices:["Toujours 0","max(0, x)","Une probabilité","Un vecteur normalisé"],a:1},{q:"Un MLP (Multi-Layer Perceptron) est ?",choices:["Un réseau convolutif","Un réseau entièrement connecté avec couches cachées","Un réseau récurrent","Un transformeur"],a:1},{q:"Le rôle d'une fonction d'activation est ?",choices:["Réduire le nombre de paramètres","Introduire la non-linéarité","Normaliser les données","Calculer la loss"],a:1}]},
+      {id:"p4w2",week:2,title:"PyTorch",topics:["Tensors et autograd","Modules et optimiseurs","DataLoader et Dataset","GPU sur Google Colab"],project:"Classifier MNIST avec PyTorch (99% accuracy cible)",resources:["Deep Learning – Goodfellow (gratuit en ligne)"],quiz:[{q:"PyTorch autograd calcule automatiquement ?",choices:["Les prédictions","Les gradients pour la backpropagation","La structure du réseau","Les hyperparamètres"],a:1},{q:"Un DataLoader gère ?",choices:["Les connexions réseau","Le chargement par batches et le shuffle des données","Le déploiement du modèle","La visualisation"],a:1},{q:"torch.no_grad() est utilisé lors de ?",choices:["L'entraînement","L'inférence / évaluation pour économiser la mémoire","L'initialisation","Le chargement des données"],a:1},{q:"nn.Module est la classe de base pour ?",choices:["Les datasets","Tous les modèles PyTorch","Les optimiseurs","Les fonctions de loss"],a:1}]},
+      {id:"p4w3",week:3,title:"CNN – Vision",topics:["Convolutions et pooling","Architectures : VGG, ResNet","Transfer learning","Détection d'objets (YOLO)"],project:"Classificateur d'images custom avec Transfer Learning (ResNet)",resources:[],quiz:[{q:"Une convolution en deep learning ?",choices:["Multiplie deux matrices","Applique un filtre appris sur une image","Normalise les activations","Connecte tous les neurones"],a:1},{q:"Le Transfer Learning consiste à ?",choices:["Transférer des données entre serveurs","Réutiliser un modèle pré-entraîné sur une nouvelle tâche","Entraîner depuis zéro","Compresser un modèle"],a:1},{q:"Le pooling dans un CNN sert à ?",choices:["Augmenter la résolution","Réduire la dimension spatiale","Ajouter des features","Normaliser les poids"],a:1},{q:"ResNet introduit les 'skip connections' pour ?",choices:["Accélérer l'inférence","Résoudre le problème du gradient vanishing","Réduire les paramètres","Augmenter la précision uniquement"],a:1}]},
+      {id:"p4w4",week:4,title:"RNN & LSTM",topics:["Séquences temporelles","Vanishing gradient","LSTM et GRU","Prédiction séries temporelles"],project:"Prédiction de cours boursiers avec LSTM",resources:[],quiz:[{q:"Le vanishing gradient est un problème des RNN car ?",choices:["Les gradients explosent","Les gradients s'annulent dans les longues séquences","Le réseau est trop rapide","Les données sont trop grandes"],a:1},{q:"LSTM résout le vanishing gradient avec ?",choices:["Plus de couches","Des gates (portes) contrôlant le flux d'information","Un learning rate plus élevé","Des skip connections"],a:1},{q:"GRU vs LSTM : GRU est ?",choices:["Plus précis","Plus simple avec moins de gates","Plus lent","Plus récent"],a:1},{q:"Les RNN sont adaptés aux données ?",choices:["Tabulaires","Séquentielles (texte, audio, séries temporelles)","Images","Graphes"],a:1}]},
+      {id:"p4w5",week:5,title:"Transformers",topics:["Mécanisme d'attention","BERT : encodeur","GPT : décodeur","Fine-tuning Hugging Face"],project:"Fine-tuner BERT pour classification de sentiment en français",resources:["Papier : Attention Is All You Need (arXiv)"],quiz:[{q:"L'attention dans les Transformers permet ?",choices:["D'accélérer l'entraînement","De pondérer l'importance de chaque token dans le contexte","De réduire la taille du modèle","De gérer des images"],a:1},{q:"BERT est entraîné avec ?",choices:["La génération de texte gauche-droite","Le masked language modeling (MLM) et NSP","La classification uniquement","La traduction"],a:1},{q:"GPT génère du texte de manière ?",choices:["Bidirectionnelle","Autoregressive (gauche vers droite)","Aléatoire","Basée sur des templates"],a:1},{q:"Hugging Face 'transformers' library permet ?",choices:["De créer des APIs","D'utiliser facilement des modèles pré-entraînés","De gérer des bases de données","De déployer sur AWS"],a:1}]},
+      {id:"p4w6",week:6,title:"LLMs & Applications",topics:["LangChain : chains et agents","RAG : Retrieval-Augmented Generation","Embeddings et bases vectorielles","Prompting avancé"],project:"Chatbot RAG sur tes propres documents (PDF, notes de cours)",resources:[],quiz:[{q:"RAG (Retrieval-Augmented Generation) combine ?",choices:["Deux modèles de génération","La recherche dans une base de connaissances + la génération LLM","Un CNN et un RNN","Fine-tuning et prompting"],a:1},{q:"Un embedding est ?",choices:["Un type de compression","Une représentation vectorielle dense d'un texte","Un layer du réseau","Un type de tokenizer"],a:1},{q:"Une base de données vectorielle stocke ?",choices:["Des tables SQL","Des embeddings pour la recherche par similarité","Des fichiers binaires","Des logs"],a:1},{q:"LangChain est un framework pour ?",choices:["Entraîner des LLMs","Construire des applications autour des LLMs (chains, agents)","Déployer sur AWS","Visualiser des données"],a:1}]},
+      {id:"p4w7",week:7,title:"MLOps I",topics:["MLflow : tracking expériences","Model registry et versioning","FastAPI : exposer un modèle","Tests et validation de modèles"],project:"Pipeline MLOps complet : expérimentation → registry → API",resources:[],quiz:[{q:"MLflow track permet de ?",choices:["Déployer des modèles","Enregistrer métriques, paramètres et artifacts de chaque run","Monitorer la production","Gérer les données"],a:1},{q:"FastAPI est choisi pour exposer des modèles ML car ?",choices:["Il est le plus ancien","Il est très rapide et génère automatiquement la doc Swagger","Il supporte uniquement Python 2","Il inclut MLflow"],a:1},{q:"Le model registry dans MLOps sert à ?",choices:["Stocker les données","Versionner et gérer le cycle de vie des modèles","Monitorer les requêtes","Automatiser l'entraînement"],a:1},{q:"Un test de modèle ML vérifie ?",choices:["Uniquement la précision","Les performances, la robustesse et le comportement attendu","La vitesse uniquement","La taille du modèle"],a:1}]},
+      {id:"p4w8",week:8,title:"MLOps II – AWS",topics:["Dockeriser FastAPI + modèle","AWS ECR : registre d'images","AWS ECS : déployer conteneurs","CI/CD GitHub Actions"],project:"Modèle ML déployé en production sur AWS avec CI/CD automatisé",resources:[],quiz:[{q:"AWS ECR est un registre pour ?",choices:["Les données S3","Les images Docker","Les modèles ML","Les fonctions Lambda"],a:1},{q:"GitHub Actions permet ?",choices:["De gérer les issues","D'automatiser build, test et déploiement","De réviser le code","De gérer les branches"],a:1},{q:"ECS (Elastic Container Service) gère ?",choices:["Du stockage objet","L'orchestration de conteneurs Docker sur AWS","Des bases de données","Des fonctions serverless"],a:1},{q:"Un pipeline CI/CD typique inclut ?",choices:["Uniquement les tests","Build → Test → Deploy automatiquement","Seulement le déploiement","Uniquement la compilation"],a:1}]},
+      {id:"p4w9",week:9,title:"Kubernetes",topics:["Pods, Services, Deployments","Helm charts","Auto-scaling","Monitoring Prometheus"],project:"Déployer l'app ML sur Kubernetes (minikube local + EKS AWS)",resources:[],quiz:[{q:"Un Pod Kubernetes est ?",choices:["Un serveur physique","La plus petite unité déployable contenant un ou plusieurs conteneurs","Un service réseau","Un volume de stockage"],a:1},{q:"Helm est un ?",choices:["Outil de monitoring","Gestionnaire de packages pour Kubernetes","Type de Pod","Service AWS"],a:1},{q:"HPA (Horizontal Pod Autoscaler) ajuste ?",choices:["La taille des conteneurs","Le nombre de pods selon la charge","Les ressources CPU allouées","Les règles réseau"],a:1},{q:"Un Service Kubernetes expose ?",choices:["Des logs","Un ensemble de Pods comme endpoint réseau stable","Des volumes","Des secrets"],a:1}]},
+      {id:"p4w10",week:10,title:"Terraform & IaC",topics:["Infrastructure as Code","Providers, resources, state","Déployer infra AWS complète","Variables et modules"],project:"Infra AWS complète provisionnée avec Terraform (VPC, EC2, RDS, S3)",resources:[],quiz:[{q:"Infrastructure as Code (IaC) signifie ?",choices:["Coder l'application","Gérer l'infrastructure via des fichiers de configuration versionnables","Documenter l'infrastructure","Monitorer les serveurs"],a:1},{q:"Le 'state' Terraform représente ?",choices:["Le code source","L'état actuel de l'infrastructure déployée","Les variables","Les outputs"],a:1},{q:"'terraform plan' fait ?",choices:["Applique les changements","Montre ce qui va être créé/modifié/supprimé sans l'appliquer","Détruit l'infrastructure","Initialise le projet"],a:1},{q:"Un module Terraform est ?",choices:["Un provider","Un ensemble réutilisable de ressources","Un type de variable","Un backend"],a:1}]},
+      {id:"p4w11",week:11,title:"Monitoring & Observabilité",topics:["Prometheus + Grafana","Logs avec ELK Stack","Data drift detection","Alertes automatiques"],project:"Stack de monitoring complète pour l'app ML en production",resources:[],quiz:[{q:"Prometheus collecte des métriques en utilisant ?",choices:["Un agent push","Le scraping (pull) depuis des endpoints /metrics","Des webhooks","Des logs fichiers"],a:1},{q:"Grafana est principalement un outil de ?",choices:["Collecte de métriques","Visualisation et dashboarding","Gestion des alertes uniquement","Stockage de logs"],a:1},{q:"Le data drift en ML production signifie ?",choices:["Un bug dans le modèle","Que les données en production s'éloignent de la distribution d'entraînement","Une fuite mémoire","Un problème réseau"],a:1},{q:"ELK Stack combine ?",choices:["Elasticsearch, LangChain, Kubernetes","Elasticsearch, Logstash, Kibana","AWS, Lambda, Kubernetes","Etcd, Linux, Kafka"],a:1}]},
+      {id:"p4w12",week:12,title:"Certifications & Bilan",topics:["AWS Cloud Practitioner (examen)","AWS Solutions Architect (prépa)","Projet IA complet : idée → prod","Portfolio GitHub complet"],project:"Système de vision IA en production AWS + monitoring + CI/CD",resources:[],quiz:[{q:"AWS Cloud Practitioner certifie ?",choices:["Des compétences avancées d'architecture","La connaissance fondamentale de l'écosystème AWS","Des compétences de sécurité","La maîtrise de Kubernetes"],a:1},{q:"Un portfolio GitHub impactant montre ?",choices:["Uniquement du code","Des projets complets avec README, CI/CD, déploiement","Le nombre de commits","Des forks d'autres projets"],a:1},{q:"MLOps = DevOps + ?",choices:["Cybersécurité","Pratiques spécifiques au cycle de vie des modèles ML","Architecture cloud","Data engineering uniquement"],a:1},{q:"La 'serverless inference' sur AWS utilise ?",choices:["EC2 toujours allumé","SageMaker Serverless Inference ou Lambda","ECS Kubernetes","RDS"],a:1}]},
+    ]
+  },
+  {
+    id:"p5",phase:5,title:"Expert + Startup",duration:"Mois 25–48",color:"#F77F00",accent:"#FFB347",icon:"🚀",
+    goal:"Devenir une référence et construire un produit qui génère de l'argent",
+    weeks:[
+      {id:"p5w1",week:1,title:"Personal Branding Tech",topics:["Contribuer à 1 projet IA sur GitHub","Blog technique (Medium/Substack)","LinkedIn : profil expert","Twitter/X : 1 thread technique/semaine"],project:"Publier 1 article technique + 1 contribution open source",resources:[],quiz:[{q:"Le personal branding technique sert à ?",choices:["Uniquement à trouver un emploi","Construire une réputation qui attire opportunités, clients et investisseurs","Remplacer les compétences techniques","Faire du marketing pour une entreprise"],a:1},{q:"Contribuer à l'open source sur GitHub montre ?",choices:["Uniquement ta générosité","Tes compétences réelles sur des projets utilisés par d'autres","Que tu copies le code des autres","Que tu as du temps libre"],a:1},{q:"Un thread technique Twitter/LinkedIn de qualité doit ?",choices:["Être très long","Enseigner quelque chose d'utile de manière claire et concise","Contenir uniquement des images","Être publié quotidiennement"],a:1},{q:"Le networking technique se construit via ?",choices:["Uniquement les conférences payantes","GitHub, blogs, talks, meetups, contributions open source","Les réseaux sociaux personnels","Les diplômes"],a:1}]},
+      {id:"p5w2",week:2,title:"Recherche & Papers",topics:["Lire 1 papier arXiv/semaine","Implémenter 1 papier IA","Résumer et publier analyses","Kaggle : viser rang Expert"],project:"Implémenter un papier IA récent et publier une analyse",resources:[],quiz:[{q:"arXiv est ?",choices:["Un journal payant","Une plateforme de prépublications scientifiques gratuites","Un outil de ML","Un cloud provider"],a:1},{q:"Implémenter un papier de recherche permet de ?",choices:["Copier des idées","Comprendre profondément les techniques et les valider","Publier rapidement","Éviter de lire le papier en entier"],a:1},{q:"Le rang Kaggle Expert nécessite ?",choices:["1 médaille","2 médailles Silver ou 1 Gold dans les compétitions","Uniquement des participations","Un emploi chez Google"],a:1},{q:"Reproduire les résultats d'un papier est difficile car ?",choices:["Les papiers sont trop courts","Les détails d'implémentation sont souvent omis","Les auteurs mentent","Le code est trop complexe"],a:1}]},
+      {id:"p5w3",week:3,title:"Certifications Premium",topics:["OSCP : préparation intensive","Google Professional ML Engineer","AWS Machine Learning Specialty","Planifier les examens"],project:"Plan de préparation aux certifications avec timeline précise",resources:[],quiz:[{q:"OSCP est unique car l'examen est ?",choices:["Un QCM","Un examen pratique de 24h où il faut compromettre des machines","Un oral","Un projet de 3 mois"],a:1},{q:"Google Professional ML Engineer certifie ?",choices:["La connaissance basique du ML","La capacité à concevoir et déployer des solutions ML en production","Uniquement TensorFlow","Les compétences de data scientist"],a:1},{q:"AWS Machine Learning Specialty nécessite en prérequis ?",choices:["Aucun prérequis","AWS Cloud Practitioner recommandé + expérience ML","Uniquement Python","Un emploi chez AWS"],a:1},{q:"Les certifications ont plus de valeur quand ?",choices:["On en a beaucoup","Elles sont complétées par des projets concrets démontrables","Elles sont récentes","On les mentionne à chaque conversation"],a:1}]},
+      {id:"p5w4",week:4,title:"Validation Idée Startup",topics:["Identifier 3 niches lucratives","Interviewer 20 personnes","Valider la douleur","Définir ICP (Ideal Customer Profile)"],project:"Document de validation d'idée avec 20 interviews clients",resources:[],quiz:[{q:"Le Problem-Market Fit se valide en ?",choices:["Codant le MVP d'abord","Parlant à de vrais clients potentiels avant de coder","Analysant les concurrents","Levant des fonds"],a:1},{q:"ICP (Ideal Customer Profile) décrit ?",choices:["Le profil de l'équipe fondatrice","Le client idéal : secteur, taille, douleur, budget","Le plan financier","L'architecture technique"],a:1},{q:"Une 'douleur' valide pour une startup est ?",choices:["Un problème mineur pratique","Un problème récurrent, coûteux, sans bonne solution existante","Une amélioration esthétique","Un besoin de niche extrême"],a:1},{q:"La règle 'Mom Test' dit de ?",choices:["Demander à ta mère ce qu'elle pense","Poser des questions sur les comportements passés, pas les opinions futures","Valider uniquement avec des experts","Coder le MVP avant les interviews"],a:1}]},
+      {id:"p5w5",week:5,title:"MVP en 4 semaines",topics:["Définir le périmètre MVP","Coder l'essentiel uniquement","Landing page avec waitlist","Premiers retours utilisateurs"],project:"MVP fonctionnel déployé avec 10 utilisateurs beta",resources:[],quiz:[{q:"MVP signifie ?",choices:["Most Valuable Product","Minimum Viable Product","Maximum Viable Prototype","Most Visited Page"],a:1},{q:"Un bon MVP doit ?",choices:["Avoir toutes les fonctionnalités prévues","Tester la valeur principale avec le minimum de développement","Être parfaitement designé","Être gratuit"],a:1},{q:"Une landing page avec waitlist sert à ?",choices:["Remplacer le MVP","Valider l'intérêt avant de coder","Lever des fonds","Recruter des développeurs"],a:1},{q:"La priorité absolue dans un MVP est ?",choices:["La performance","La sécurité","La fonctionnalité core qui résout la douleur principale","Le design"],a:2}]},
+      {id:"p5w6",week:6,title:"Premiers Clients Payants",topics:["Beta fermée : 10 clients gratuits","Feedback structuré","Itérations rapides","Pricing : définir son modèle"],project:"10 clients payants avec contrats signés",resources:[],quiz:[{q:"Le Product-Market Fit se manifeste par ?",choices:["Beaucoup de visites sur la landing page","Les clients qui utilisent activement le produit et le recommandent","Beaucoup de likes sur LinkedIn","Un bon score NPS uniquement"],a:1},{q:"Le modèle de pricing SaaS le plus courant est ?",choices:["One-time payment","Abonnement mensuel/annuel récurrent","Freemium uniquement","Pay per use uniquement"],a:1},{q:"Le churn rate mesure ?",choices:["Le taux d'acquisition","Le pourcentage de clients qui abandonnent le service","La croissance du revenu","Le coût d'acquisition"],a:1},{q:"Le feedback structuré après chaque démo doit capturer ?",choices:["Uniquement les compliments","Ce qui manque, ce qui bloque, la volonté de payer","Les bugs uniquement","Les suggestions de design"],a:1}]},
+      {id:"p5w7",week:7,title:"Croissance",topics:["100 clients payants : objectif","SEO technique","Cold email et LinkedIn outreach","Product-market fit indicators"],project:"Stratégie de croissance documentée + premier recrutement",resources:[],quiz:[{q:"ARR signifie ?",choices:["Average Revenue Rate","Annual Recurring Revenue","Actual Revenue Report","Automated Revenue Reporting"],a:1},{q:"Le SEO technique inclut ?",choices:["Uniquement les backlinks","Vitesse de page, structure des URLs, schema markup, sitemap","Uniquement le contenu","Les réseaux sociaux"],a:1},{q:"MRR (Monthly Recurring Revenue) de 10k$ correspond à un ARR de ?",choices:["10k$","100k$","120k$","1M$"],a:2},{q:"La 'North Star Metric' d'une startup est ?",choices:["Le chiffre d'affaires uniquement","La métrique unique qui capture le mieux la valeur créée pour les clients","Le nombre d'employés","Le trafic web"],a:1}]},
+      {id:"p5w8",week:8,title:"Scale & Financement",topics:["100 clients payants","Pitch deck professionnel","Contacter VCs / business angels","Alternative : bootstrapped"],project:"Pitch deck 10 slides + 5 meetings investisseurs",resources:[],quiz:[{q:"Un pitch deck doit contenir ?",choices:["50 slides détaillées","10-12 slides clés : problème, solution, marché, traction, équipe, ask","Uniquement les finances","Une démonstration technique complète"],a:1},{q:"Bootstrapping signifie ?",choices:["Lever des fonds au plus tôt","Financer sa startup avec ses propres revenus sans investisseurs externes","Vendre l'entreprise rapidement","S'associer avec une grande entreprise"],a:1},{q:"La traction est l'élément le plus important pour les VCs car ?",choices:["Elle prouve que l'équipe est technique","Elle prouve que le marché veut le produit (données réelles)","Elle est facile à falsifier","Elle prédit les futures levées de fonds"],a:1},{q:"La valorisation pre-money est ?",choices:["La valeur de l'entreprise après investissement","La valeur de l'entreprise avant l'investissement","Le montant levé","Le revenu annuel"],a:1}]},
+    ]
+  }
+];
+
+// ─────────────────────────────────────────────
+// XP SYSTEM
+// ─────────────────────────────────────────────
+const XP_TOPIC = 10;
+const XP_WEEK = 50;
+const XP_QUIZ_PERFECT = 100;
+const XP_QUIZ_PASS = 60;
+const XP_JOURNAL = 20;
+const XP_POMODORO = 15;
+
+const LEVELS = [
+  {name:"Débutant",min:0,max:500,icon:"🌱"},
+  {name:"Apprenti",min:500,max:1500,icon:"📚"},
+  {name:"Développeur",min:1500,max:3500,icon:"💻"},
+  {name:"Ingénieur",min:3500,max:7000,icon:"⚙️"},
+  {name:"Expert",min:7000,max:12000,icon:"🔥"},
+  {name:"Architecte",min:12000,max:20000,icon:"🏗️"},
+  {name:"Senior",min:20000,max:35000,icon:"🎯"},
+  {name:"Lead",min:35000,max:55000,icon:"👑"},
+  {name:"Mastermind",min:55000,max:80000,icon:"🧠"},
+  {name:"Milliardaire Tech",min:80000,max:999999,icon:"💎"},
+];
+
+const BADGES = [
+  {id:"first_topic",name:"Premier pas",desc:"Cocher son premier sujet",icon:"🎯",xp:0},
+  {id:"first_week",name:"Semaine 1",desc:"Terminer sa première semaine",icon:"🏁",xp:0},
+  {id:"first_quiz",name:"Premier quiz",desc:"Réussir son premier quiz",icon:"🧪",xp:0},
+  {id:"perfect_quiz",name:"Génie",desc:"Quiz parfait (4/4)",icon:"🌟",xp:0},
+  {id:"streak_3",name:"3 jours de feu",desc:"3 jours consécutifs",icon:"🔥",xp:0},
+  {id:"streak_7",name:"Semaine de fer",desc:"7 jours consécutifs",icon:"⚡",xp:0},
+  {id:"streak_30",name:"Mois invaincu",desc:"30 jours consécutifs",icon:"🏆",xp:0},
+  {id:"pomodoro_10",name:"Focus master",desc:"10 pomodoros complétés",icon:"🍅",xp:0},
+  {id:"journal_7",name:"Chroniqueur",desc:"7 entrées de journal",icon:"📖",xp:0},
+  {id:"phase0_done",name:"Fondations posées",desc:"Phase 0 terminée",icon:"⚙️",xp:0},
+  {id:"phase1_done",name:"Serpent de code",desc:"Phase 1 terminée",icon:"🐍",xp:0},
+  {id:"phase2_done",name:"Data Lord",desc:"Phase 2 terminée",icon:"📊",xp:0},
+  {id:"phase3_done",name:"Hacker éthique",desc:"Phase 3 terminée",icon:"🔐",xp:0},
+  {id:"phase4_done",name:"AI Engineer",desc:"Phase 4 terminée",icon:"🤖",xp:0},
+  {id:"phase5_done",name:"Milliardaire Tech",desc:"Phase 5 terminée",icon:"💎",xp:0},
+];
+
+// ─────────────────────────────────────────────
+// STORAGE
+const SK = "trp_v4";
+
+function getLevel(xp) {
+  for(let i=LEVELS.length-1;i>=0;i--) if(xp>=LEVELS[i].min) return {level:i+1,...LEVELS[i]};
+  return {level:1,...LEVELS[0]};
+}
+function getLevelPct(xp) {
+  const l=getLevel(xp);
+  return Math.round(((xp-l.min)/(l.max-l.min))*100);
+}
+
+// ─────────────────────────────────────────────
+// MAIN APP
+// ─────────────────────────────────────────────
+function App() {
+  const [tab,setTab] = useState("dashboard");
+  const [progress,setProgress] = useState({});
+  // xp, streak, badges, journal, pomodoros
+  const [meta,setMeta] = useState({xp:0,streak:0,lastActive:"",totalPomodoros:0,badges:[],journalCount:0});
+  const [activePhase,setActivePhase] = useState("p0");
+  const [activeWeek,setActiveWeek] = useState("p0w1");
+  const [quizState,setQuizState] = useState(null); // {phaseId,weekId,answers:[],done}
+  const [journalOpen,setJournalOpen] = useState(false);
+  const [journalEntry,setJournalEntry] = useState("");
+  const [journalHistory,setJournalHistory] = useState([]);
+  const [pomodoroActive,setPomodoroActive] = useState(false);
+  const [pomodoroSeconds,setPomodoroSeconds] = useState(25*60);
+  const [pomodoroPhase,setPomodoroPhase] = useState("work"); // work | break
+  const [toast,setToast] = useState(null);
+  const [planOpen,setPlanOpen] = useState(false);
+  const [loaded,setLoaded] = useState(false);
+  const timerRef = useRef(null);
+
+  // ── LOAD ──
+  useEffect(()=>{
+    try {
+      const raw = localStorage.getItem(SK);
+      if(raw){
+        const d = JSON.parse(raw);
+        if(d.progress){
+          const p={};
+          for(const[k,v] of Object.entries(d.progress)) p[k]={...v,topics:new Set(v.topics||[])};
+          setProgress(p);
+        }
+        if(d.meta) setMeta(d.meta);
+        if(d.journal) setJournalHistory(d.journal);
+      }
+    } catch(e){}
+    setLoaded(true);
+  },[]);
+
+  // ── SAVE ──
+  useEffect(()=>{
+    if(!loaded) return;
+    try {
+      const sp={};
+      for(const[k,v] of Object.entries(progress)) sp[k]={...v,topics:Array.from(v.topics||[])};
+      localStorage.setItem(SK, JSON.stringify({progress:sp,meta,journal:journalHistory}));
+    } catch(e){}
+  },[progress,meta,journalHistory,loaded]);
+
+  // ── POMODORO TIMER ──
+  useEffect(()=>{
+    if(pomodoroActive){
+      timerRef.current = setInterval(()=>{
+        setPomodoroSeconds(s=>{
+          if(s<=1){
+            clearInterval(timerRef.current);
+            setPomodoroActive(false);
+            if(pomodoroPhase==="work"){
+              addXp(XP_POMODORO,"🍅 Pomodoro terminé !");
+              setMeta(m=>{
+                const newTotal=m.totalPomodoros+1;
+                const nb=[...m.badges];
+                if(newTotal>=10 && !nb.includes("pomodoro_10")){nb.push("pomodoro_10");showToast("Badge débloqué : Focus Master 🍅");}
+                return {...m,totalPomodoros:newTotal,badges:nb};
+              });
+              setPomodoroPhase("break");
+              return 5*60;
+            } else {
+              setPomodoroPhase("work");
+              return 25*60;
+            }
+          }
+          return s-1;
+        });
+      },1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return ()=>clearInterval(timerRef.current);
+  },[pomodoroActive,pomodoroPhase]);
+
+  function showToast(msg,type="success"){
+    setToast({msg,type});
+    setTimeout(()=>setToast(null),3000);
+  }
+
+  function addXp(amount,msg){
+    setMeta(m=>{
+      const newXp=m.xp+amount;
+      const oldLevel=getLevel(m.xp).level;
+      const newLevel=getLevel(newXp).level;
+      if(newLevel>oldLevel) showToast(`⬆️ Niveau ${newLevel} : ${getLevel(newXp).name} ${getLevel(newXp).icon}`,"level");
+      return {...m,xp:newXp};
+    });
+    showToast(msg);
+  }
+
+  function checkAndUpdateStreak(){
+    const today=new Date().toISOString().slice(0,10);
+    setMeta(m=>{
+      if(m.lastActive===today) return m;
+      const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+      const newStreak = m.lastActive===yesterday ? m.streak+1 : 1;
+      const nb=[...m.badges];
+      if(newStreak>=3 && !nb.includes("streak_3")){nb.push("streak_3");showToast("Badge : 3 jours de feu 🔥");}
+      if(newStreak>=7 && !nb.includes("streak_7")){nb.push("streak_7");showToast("Badge : Semaine de fer ⚡");}
+      if(newStreak>=30 && !nb.includes("streak_30")){nb.push("streak_30");showToast("Badge : Mois invaincu 🏆");}
+      return {...m,streak:newStreak,lastActive:today,badges:nb};
+    });
+  }
+
+  function toggleTopic(phaseId,weekId,topicIndex){
+    checkAndUpdateStreak();
+    const key=`${phaseId}__${weekId}`;
+    setProgress(prev=>{
+      const cur=prev[key]||{topics:new Set(),completed:false,quizPassed:false};
+      const topics=new Set(cur.topics);
+      const phase=PROGRAM.find(p=>p.id===phaseId);
+      const week=phase.weeks.find(w=>w.id===weekId);
+      if(topics.has(topicIndex)){
+        topics.delete(topicIndex);
+      } else {
+        topics.add(topicIndex);
+        if(!cur.topics.has(topicIndex)){
+          addXp(XP_TOPIC,`+${XP_TOPIC} XP — sujet complété !`);
+          setMeta(m=>{
+            const nb=[...m.badges];
+            const allTopics=Object.values({...prev,[key]:{topics,completed:false,quizPassed:false}}).reduce((a,v)=>a+v.topics.size,0);
+            if(allTopics===1 && !nb.includes("first_topic")){nb.push("first_topic");showToast("Badge : Premier pas 🎯");}
+            return {...m,badges:nb};
+          });
+        }
+      }
+      const completed=topics.size===week.topics.length;
+      if(completed && !cur.completed){
+        addXp(XP_WEEK,`+${XP_WEEK} XP — semaine terminée ! 🎉`);
+        setMeta(m=>{
+          const nb=[...m.badges];
+          const doneWeeks=Object.values({...prev,[key]:{topics,completed:true,quizPassed:cur.quizPassed}}).filter(v=>v.completed).length;
+          if(doneWeeks===1 && !nb.includes("first_week")){nb.push("first_week");showToast("Badge : Semaine 1 🏁");}
+          // Check phase completion
+          const phaseDoneKey=`${phaseId}_done`;
+          if(!nb.includes(phaseDoneKey)){
+            const phaseObj=PROGRAM.find(p=>p.id===phaseId);
+            const allDone=phaseObj.weeks.every(w=>{
+              const k=`${phaseId}__${w.id}`;
+              const wp={...prev,[key]:{topics,completed:true,quizPassed:cur.quizPassed}}[k];
+              return wp?.completed;
+            });
+            if(allDone){nb.push(phaseDoneKey);showToast(`Phase terminée : ${phaseObj.icon} ${phaseObj.title} !`,"level");}
+          }
+          return {...m,badges:nb};
+        });
+      }
+      return {...prev,[key]:{topics,completed,quizPassed:cur.quizPassed}};
+    });
+  }
+
+  function startQuiz(phaseId,weekId){
+    checkAndUpdateStreak();
+    setQuizState({phaseId,weekId,answers:[],done:false,score:0});
+    setTab("quiz");
+  }
+
+  function answerQuiz(qIdx,aIdx){
+    if(quizState.done) return;
+    const phase=PROGRAM.find(p=>p.id===quizState.phaseId);
+    const week=phase.weeks.find(w=>w.id===quizState.weekId);
+    const q=week.quiz[qIdx];
+    const correct=aIdx===q.a;
+    const newAnswers=[...quizState.answers,{qIdx,aIdx,correct}];
+    if(newAnswers.length===week.quiz.length){
+      const score=newAnswers.filter(a=>a.correct).length;
+      const perfect=score===week.quiz.length;
+      const passed=score>=3;
+      const xpEarned=perfect?XP_QUIZ_PERFECT:passed?XP_QUIZ_PASS:20;
+      addXp(xpEarned,`Quiz : ${score}/${week.quiz.length} — +${xpEarned} XP`);
+      const key=`${quizState.phaseId}__${quizState.weekId}`;
+      setProgress(prev=>({...prev,[key]:{...(prev[key]||{topics:new Set(),completed:false}),quizPassed:passed}}));
+      setMeta(m=>{
+        const nb=[...m.badges];
+        const totalQuizzes=Object.values(progress).filter(v=>v.quizPassed).length;
+        if(totalQuizzes===0 && passed && !nb.includes("first_quiz")){nb.push("first_quiz");showToast("Badge : Premier Quiz 🧪");}
+        if(perfect && !nb.includes("perfect_quiz")){nb.push("perfect_quiz");showToast("Badge : Génie 🌟");}
+        return {...m,badges:nb};
+      });
+      setQuizState(s=>({...s,answers:newAnswers,done:true,score}));
+    } else {
+      setQuizState(s=>({...s,answers:newAnswers}));
+    }
+  }
+
+  function saveJournal(){
+    if(!journalEntry.trim()) return;
+    checkAndUpdateStreak();
+    const entry={date:new Date().toISOString(),text:journalEntry.trim()};
+    const newHistory=[entry,...journalHistory];
+    setJournalHistory(newHistory);
+    addXp(XP_JOURNAL,`+${XP_JOURNAL} XP — entrée de journal ajoutée ! 📖`);
+    setMeta(m=>{
+      const nb=[...m.badges];
+      if(newHistory.length>=7 && !nb.includes("journal_7")){nb.push("journal_7");showToast("Badge : Chroniqueur 📖");}
+      return {...m,journalCount:newHistory.length,badges:nb};
+    });
+    setJournalEntry("");
+  }
+
+  // ── COMPUTED ──
+  function getPhaseStats(phase){
+    let total=0,done=0,weeks=0,weeksDone=0,quizzesPassed=0;
+    phase.weeks.forEach(w=>{
+      weeks++;
+      total+=w.topics.length;
+      const k=`${phase.id}__${w.id}`;
+      const p=progress[k];
+      done+=p?p.topics.size:0;
+      if(p?.completed) weeksDone++;
+      if(p?.quizPassed) quizzesPassed++;
+    });
+    return{total,done,pct:total?Math.round((done/total)*100):0,weeks,weeksDone,quizzesPassed};
+  }
+
+  function getGlobal(){
+    let tt=0,td=0,tw=0,twd=0;
+    PROGRAM.forEach(ph=>{
+      ph.weeks.forEach(w=>{
+        tw++; tt+=w.topics.length;
+        const k=`${ph.id}__${w.id}`;
+        const p=progress[k];
+        if(p){td+=p.topics.size; if(p.completed)twd++;}
+      });
+    });
+    return{tt,td,tw,twd,pct:tt?Math.round((td/tt)*100):0};
+  }
+
+  const G=getGlobal();
+  const lvl=getLevel(meta.xp);
+  const lvlPct=getLevelPct(meta.xp);
+  const phase=PROGRAM.find(p=>p.id===activePhase);
+  const week=phase?.weeks.find(w=>w.id===activeWeek)||phase?.weeks[0];
+  const weekKey=`${activePhase}__${activeWeek}`;
+  const weekProgress=progress[weekKey]||{topics:new Set(),completed:false,quizPassed:false};
+
+  const fmt=(s)=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+
+  // Generate weekly plan
+  function getWeeklyPlan(){
+    const allW=PROGRAM.flatMap(p=>p.weeks.map(w=>({...w,phaseId:p.id,phaseColor:p.color,phaseIcon:p.icon})));
+    const pending=allW.filter(w=>{
+      const k=`${w.phaseId}__${w.id}`;
+      return !progress[k]?.completed;
+    }).slice(0,5);
+    const days=["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+    return days.map((d,i)=>{
+      const w=pending[Math.floor(i/1.4)];
+      return{day:d,task:w?`${w.phaseIcon} ${w.title} (${w.topics[i%w.topics.length]||w.topics[0]})`:"Révision & projets libres"};
+    });
+  }
+
+  const C = {
+    bg:"#07080D", card:"#0F1118", border:"#1A1D2E", text:"#E2E4F0",
+    muted:"#5A5F7A", accent:"#6C63FF",
+  };
+
+  // ── RENDER ──
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,color:C.text,fontFamily:"'Inter',system-ui,sans-serif",fontSize:14}}>
+
+      {/* TOAST */}
+      {toast&&(
+        <div style={{position:"fixed",top:20,right:20,zIndex:9999,background:toast.type==="level"?"#6C63FF":toast.type==="error"?"#FF6B6B":"#00C9A7",color:"#fff",padding:"10px 18px",borderRadius:12,fontWeight:700,fontSize:13,boxShadow:"0 4px 20px rgba(0,0,0,0.4)",animation:"fadeIn 0.3s"}}>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* NAV */}
+      <div style={{background:C.card,borderBottom:`1px solid ${C.border}`,padding:"0 20px",display:"flex",alignItems:"center",gap:6,height:56,position:"sticky",top:0,zIndex:200,overflowX:"auto"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginRight:16,flexShrink:0}}>
+          <div style={{width:28,height:28,borderRadius:7,background:"linear-gradient(135deg,#6C63FF,#4FACFE)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🎯</div>
+          <span style={{fontWeight:800,fontSize:15,letterSpacing:"-0.3px",whiteSpace:"nowrap"}}>TechRoadmap</span>
+        </div>
+        {[
+          {id:"dashboard",label:"📊 Stats"},
+          {id:"phases",label:"🗂 Phases"},
+          {id:"week",label:"📅 Semaines"},
+          {id:"quiz",label:"🧪 Quiz"},
+          {id:"journal",label:"📖 Journal"},
+          {id:"badges",label:"🏆 Badges"},
+          {id:"plan",label:"🗓 Planning"},
+        ].map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{
+            padding:"6px 12px",borderRadius:8,border:"none",cursor:"pointer",
+            background:tab===t.id?"rgba(108,99,255,0.2)":"transparent",
+            color:tab===t.id?"#A89CFF":C.muted,fontWeight:600,fontSize:12,whiteSpace:"nowrap",
+            transition:"all 0.15s",
+          }}>{t.label}</button>
+        ))}
+
+        {/* XP bar in header */}
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+          <div style={{fontSize:18}}>{lvl.icon}</div>
+          <div>
+            <div style={{fontSize:11,color:C.muted}}>{lvl.name} · Lv.{lvl.level}</div>
+            <div style={{width:100,background:C.border,borderRadius:99,height:5,marginTop:3}}>
+              <div style={{height:"100%",borderRadius:99,width:`${lvlPct}%`,background:"linear-gradient(90deg,#6C63FF,#4FACFE)"}}/>
+            </div>
+          </div>
+          <div style={{fontSize:13,fontWeight:800,color:"#A89CFF"}}>{meta.xp.toLocaleString()} XP</div>
+          {meta.streak>0&&<div style={{background:"rgba(247,122,0,0.2)",color:"#F77F00",borderRadius:8,padding:"4px 8px",fontSize:12,fontWeight:700}}>🔥{meta.streak}</div>}
+        </div>
+      </div>
+
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"24px 16px"}}>
+
+        {/* ── DASHBOARD ── */}
+        {tab==="dashboard"&&(
+          <div>
+            {/* Top stats */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:24}}>
+              {[
+                {label:"Progression",val:`${G.pct}%`,sub:`${G.td}/${G.tt} sujets`,color:"#6C63FF"},
+                {label:"Semaines faites",val:`${G.twd}`,sub:`sur ${G.tw}`,color:"#00C9A7"},
+                {label:"XP total",val:meta.xp.toLocaleString(),sub:lvl.name+" "+lvl.icon,color:"#4FACFE"},
+                {label:"Streak",val:`${meta.streak}j`,sub:"jours consécutifs",color:"#F77F00"},
+              ].map((s,i)=>(
+                <div key={i} style={{background:C.card,borderRadius:12,padding:"16px",border:`1px solid ${C.border}`}}>
+                  <div style={{color:C.muted,fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:8}}>{s.label}</div>
+                  <div style={{fontSize:26,fontWeight:900,color:s.color,lineHeight:1}}>{s.val}</div>
+                  <div style={{color:C.muted,fontSize:11,marginTop:5}}>{s.sub}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Global progress */}
+            <div style={{background:C.card,borderRadius:12,padding:"18px 20px",border:`1px solid ${C.border}`,marginBottom:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
+                <span style={{fontWeight:700}}>Progression globale sur 48 mois</span>
+                <span style={{color:"#6C63FF",fontWeight:800}}>{G.pct}%</span>
+              </div>
+              <div style={{background:C.border,borderRadius:99,height:10}}>
+                <div style={{height:"100%",borderRadius:99,width:`${G.pct}%`,background:"linear-gradient(90deg,#6C63FF,#4FACFE)",transition:"width 0.5s"}}/>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8,marginTop:14}}>
+                {PROGRAM.map(p=>{
+                  const ps=getPhaseStats(p);
+                  return(
+                    <div key={p.id} onClick={()=>{setActivePhase(p.id);setTab("phases");}} style={{cursor:"pointer",background:C.bg,borderRadius:8,padding:"10px",border:`1px solid ${ps.pct>0?p.color+"44":C.border}`,textAlign:"center"}}>
+                      <div style={{fontSize:18,marginBottom:4}}>{p.icon}</div>
+                      <div style={{fontSize:11,color:p.color,fontWeight:700,marginBottom:6}}>Ph.{p.phase}</div>
+                      <div style={{background:C.border,borderRadius:99,height:4}}>
+                        <div style={{height:"100%",borderRadius:99,width:`${ps.pct}%`,background:p.color}}/>
+                      </div>
+                      <div style={{fontSize:10,color:C.muted,marginTop:4}}>{ps.pct}%</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Level progress */}
+            <div style={{background:C.card,borderRadius:12,padding:"18px 20px",border:`1px solid ${C.border}`,marginBottom:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{fontWeight:700}}>{lvl.icon} Niveau {lvl.level} — {lvl.name}</span>
+                <span style={{color:"#6C63FF",fontWeight:800}}>{lvlPct}%</span>
+              </div>
+              <div style={{background:C.border,borderRadius:99,height:8}}>
+                <div style={{height:"100%",borderRadius:99,width:`${lvlPct}%`,background:"linear-gradient(90deg,#6C63FF,#F77F00)"}}/>
+              </div>
+              <div style={{fontSize:11,color:C.muted,marginTop:6}}>{meta.xp.toLocaleString()} / {lvl.max.toLocaleString()} XP pour niveau suivant</div>
+            </div>
+
+            {/* Pomodoro + Next weeks */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
+              {/* Pomodoro */}
+              <div style={{background:C.card,borderRadius:12,padding:20,border:`1px solid ${C.border}`}}>
+                <div style={{fontWeight:700,marginBottom:16,color:"#FF6B6B"}}>🍅 Timer Pomodoro</div>
+                <div style={{textAlign:"center",margin:"16px 0"}}>
+                  <div style={{fontSize:52,fontWeight:900,color:pomodoroPhase==="work"?"#FF6B6B":"#00C9A7",lineHeight:1}}>{fmt(pomodoroSeconds)}</div>
+                  <div style={{fontSize:12,color:C.muted,marginTop:6}}>{pomodoroPhase==="work"?"Session de travail (25 min)":"Pause (5 min)"}</div>
+                </div>
+                <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+                  <button onClick={()=>setPomodoroActive(a=>!a)} style={{padding:"8px 20px",borderRadius:8,border:"none",cursor:"pointer",background:pomodoroActive?"#FF6B6B":"#00C9A7",color:"#fff",fontWeight:700,fontSize:13}}>
+                    {pomodoroActive?"⏸ Pause":"▶ Démarrer"}
+                  </button>
+                  <button onClick={()=>{setPomodoroActive(false);setPomodoroSeconds(25*60);setPomodoroPhase("work");}} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${C.border}`,cursor:"pointer",background:"transparent",color:C.muted,fontSize:13}}>
+                    ↺ Reset
+                  </button>
+                </div>
+                <div style={{marginTop:12,textAlign:"center",fontSize:11,color:C.muted}}>
+                  🍅 Total : {meta.totalPomodoros} pomodoros · +{XP_POMODORO} XP chacun
+                </div>
+              </div>
+
+              {/* Next weeks */}
+              <div style={{background:C.card,borderRadius:12,padding:20,border:`1px solid ${C.border}`}}>
+                <div style={{fontWeight:700,marginBottom:14,color:"#A89CFF"}}>📌 Prochaines semaines</div>
+                {PROGRAM.flatMap(p=>p.weeks.map(w=>({...w,phaseId:p.id,phaseColor:p.color,phaseIcon:p.icon}))).filter(w=>{
+                  const k=`${w.phaseId}__${w.id}`;
+                  return !progress[k]?.completed;
+                }).slice(0,5).map(w=>{
+                  const k=`${w.phaseId}__${w.id}`;
+                  const p=progress[k];
+                  const pct=p?Math.round((p.topics.size/w.topics.length)*100):0;
+                  return(
+                    <div key={w.id} onClick={()=>{setActivePhase(w.phaseId);setActiveWeek(w.id);setTab("week");}} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                      <span style={{fontSize:16,flexShrink:0}}>{w.phaseIcon}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{w.title}</div>
+                        <div style={{background:C.border,borderRadius:99,height:3,marginTop:4}}>
+                          <div style={{height:"100%",borderRadius:99,width:`${pct}%`,background:w.phaseColor}}/>
+                        </div>
+                      </div>
+                      <span style={{fontSize:11,color:C.muted,flexShrink:0}}>{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Financial milestones */}
+            <div style={{background:C.card,borderRadius:12,padding:20,border:`1px solid ${C.border}`}}>
+              <div style={{fontWeight:700,marginBottom:14,color:"#F7C948"}}>💰 Jalons financiers</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10}}>
+                {[
+                  {m:"Mois 12",role:"Premier freelance",money:"500–2k$/mois",c:"#00C9A7"},
+                  {m:"Mois 18",role:"Emploi junior",money:"30–60k$/an",c:"#4FACFE"},
+                  {m:"Mois 24",role:"Intermédiaire",money:"60–120k$/an",c:"#6C63FF"},
+                  {m:"Mois 36",role:"Senior / Consulting",money:"120–250k$/an",c:"#F7C948"},
+                  {m:"Mois 48",role:"Expert / Startup",money:"Illimité 🚀",c:"#F77F00"},
+                ].map((j,i)=>(
+                  <div key={i} style={{background:C.bg,borderRadius:10,padding:12,border:`1px solid ${j.c}33`}}>
+                    <div style={{color:j.c,fontSize:11,fontWeight:700,marginBottom:4}}>{j.m}</div>
+                    <div style={{fontSize:12,fontWeight:600,marginBottom:4}}>{j.role}</div>
+                    <div style={{fontSize:13,fontWeight:800,color:j.c}}>{j.money}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── PHASES ── */}
+        {tab==="phases"&&(
+          <div>
+            <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+              {PROGRAM.map(p=>(
+                <button key={p.id} onClick={()=>setActivePhase(p.id)} style={{
+                  padding:"7px 14px",borderRadius:99,border:`1px solid ${activePhase===p.id?p.color:C.border}`,cursor:"pointer",
+                  background:activePhase===p.id?`${p.color}22`:"transparent",
+                  color:activePhase===p.id?p.color:C.muted,fontWeight:700,fontSize:12,
+                }}>
+                  {p.icon} Phase {p.phase}
+                </button>
+              ))}
+            </div>
+            {(()=>{
+              const p=PROGRAM.find(ph=>ph.id===activePhase);
+              const ps=getPhaseStats(p);
+              return(
+                <div>
+                  <div style={{background:`linear-gradient(135deg,${p.color}15,${C.card})`,border:`1px solid ${p.color}44`,borderRadius:14,padding:22,marginBottom:20}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                      <div>
+                        <div style={{fontSize:32,marginBottom:6}}>{p.icon}</div>
+                        <div style={{fontWeight:800,fontSize:22,marginBottom:4}}>{p.title}</div>
+                        <div style={{color:p.accent,fontSize:12,marginBottom:8}}>{p.duration}</div>
+                        <div style={{color:"#AAA",fontSize:13,maxWidth:500}}>{p.goal}</div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontSize:44,fontWeight:900,color:p.color}}>{ps.pct}%</div>
+                        <div style={{color:C.muted,fontSize:12}}>{ps.done}/{ps.total} sujets</div>
+                        <div style={{color:C.muted,fontSize:12}}>{ps.quizzesPassed}/{p.weeks.length} quiz passés</div>
+                      </div>
+                    </div>
+                    <div style={{background:C.border,borderRadius:99,height:8,marginTop:14}}>
+                      <div style={{height:"100%",borderRadius:99,width:`${ps.pct}%`,background:`linear-gradient(90deg,${p.color},${p.accent})`,transition:"width 0.5s"}}/>
+                    </div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+                    {p.weeks.map(w=>{
+                      const k=`${p.id}__${w.id}`;
+                      const wp=progress[k];
+                      const doneTops=wp?wp.topics.size:0;
+                      const pct=w.topics.length?Math.round((doneTops/w.topics.length)*100):0;
+                      return(
+                        <div key={w.id} onClick={()=>{setActiveWeek(w.id);setTab("week");}} style={{background:C.card,borderRadius:10,padding:14,cursor:"pointer",border:`1px solid ${wp?.completed?p.color:C.border}`,transition:"all 0.15s"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                            <span style={{fontSize:10,color:p.color,fontWeight:700,textTransform:"uppercase"}}>Semaine {w.week}</span>
+                            <div style={{display:"flex",gap:4}}>
+                              {wp?.quizPassed&&<span style={{color:"#F7C948",fontSize:12}}>🧪</span>}
+                              {wp?.completed&&<span style={{color:"#00C9A7",fontSize:13}}>✓</span>}
+                            </div>
+                          </div>
+                          <div style={{fontWeight:700,fontSize:13,marginBottom:10}}>{w.title}</div>
+                          <div style={{background:C.bg,borderRadius:99,height:4,marginBottom:6}}>
+                            <div style={{height:"100%",borderRadius:99,width:`${pct}%`,background:p.color}}/>
+                          </div>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.muted}}>
+                            <span>{doneTops}/{w.topics.length}</span><span>{pct}%</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ── WEEK DETAIL ── */}
+        {tab==="week"&&(
+          <div style={{display:"grid",gridTemplateColumns:"240px 1fr",gap:16}}>
+            {/* Phase + week list */}
+            <div>
+              <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+                {PROGRAM.map(p=>(
+                  <button key={p.id} onClick={()=>{setActivePhase(p.id);setActiveWeek(p.weeks[0].id);}} style={{
+                    width:34,height:34,borderRadius:8,border:`1px solid ${activePhase===p.id?p.color:C.border}`,cursor:"pointer",
+                    background:activePhase===p.id?`${p.color}22`:"transparent",fontSize:16,
+                  }}>{p.icon}</button>
+                ))}
+              </div>
+              <div style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,overflow:"hidden"}}>
+                <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border}`,fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase"}}>
+                  {phase?.icon} {phase?.title}
+                </div>
+                <div style={{maxHeight:520,overflowY:"auto"}}>
+                  {phase?.weeks.map(w=>{
+                    const k=`${activePhase}__${w.id}`;
+                    const wp=progress[k];
+                    const p=w.topics.length?Math.round(((wp?.topics.size||0)/w.topics.length)*100):0;
+                    return(
+                      <div key={w.id} onClick={()=>setActiveWeek(w.id)} style={{
+                        padding:"10px 14px",cursor:"pointer",
+                        background:activeWeek===w.id?`${phase?.color}18`:"transparent",
+                        borderLeft:`3px solid ${activeWeek===w.id?phase?.color:"transparent"}`,
+                        borderBottom:`1px solid ${C.border}`,
+                      }}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                          <span style={{fontSize:10,color:phase?.color,fontWeight:700}}>Sem.{w.week}</span>
+                          <div style={{display:"flex",gap:3}}>
+                            {wp?.quizPassed&&<span style={{fontSize:11}}>🧪</span>}
+                            {wp?.completed&&<span style={{color:"#00C9A7",fontSize:12}}>✓</span>}
+                          </div>
+                        </div>
+                        <div style={{fontSize:12,fontWeight:600,marginBottom:5}}>{w.title}</div>
+                        <div style={{background:C.bg,borderRadius:99,height:3}}>
+                          <div style={{height:"100%",borderRadius:99,width:`${p}%`,background:phase?.color}}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Week content */}
+            <div>
+              <div style={{background:`linear-gradient(135deg,${phase?.color}15,${C.card})`,border:`1px solid ${phase?.color}44`,borderRadius:12,padding:20,marginBottom:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                  <div>
+                    <div style={{fontSize:10,color:phase?.color,fontWeight:700,textTransform:"uppercase",marginBottom:4}}>Semaine {week?.week}</div>
+                    <div style={{fontWeight:800,fontSize:20}}>{week?.title}</div>
+                  </div>
+                  <button onClick={()=>startQuiz(activePhase,week?.id)} style={{
+                    padding:"8px 16px",borderRadius:8,border:"none",cursor:"pointer",
+                    background:weekProgress.quizPassed?"#F7C948":"#6C63FF",color:"#fff",fontWeight:700,fontSize:12,
+                  }}>
+                    {weekProgress.quizPassed?"✓ Quiz passé":"🧪 Faire le quiz"}
+                  </button>
+                </div>
+                <div style={{background:C.border,borderRadius:99,height:7}}>
+                  <div style={{height:"100%",borderRadius:99,width:`${week?.topics.length?Math.round((weekProgress.topics.size/week.topics.length)*100):0}%`,background:`linear-gradient(90deg,${phase?.color},${phase?.accent})`,transition:"width 0.4s"}}/>
+                </div>
+                <div style={{fontSize:11,color:C.muted,marginTop:6}}>{weekProgress.topics.size}/{week?.topics.length} sujets · {weekProgress.quizPassed?"Quiz ✓":"Quiz non passé"}</div>
+              </div>
+
+              {/* Topics */}
+              <div style={{background:C.card,borderRadius:12,padding:18,border:`1px solid ${C.border}`,marginBottom:12}}>
+                <div style={{fontWeight:700,marginBottom:12}}>📚 Sujets à maîtriser</div>
+                {week?.topics.map((t,i)=>{
+                  const checked=weekProgress.topics.has(i);
+                  return(
+                    <div key={i} onClick={()=>toggleTopic(activePhase,week.id,i)} style={{
+                      display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:8,cursor:"pointer",marginBottom:5,
+                      background:checked?`${phase?.color}15`:C.bg,border:`1px solid ${checked?phase?.color+"44":C.border}`,
+                    }}>
+                      <div style={{width:20,height:20,borderRadius:5,flexShrink:0,background:checked?phase?.color:"transparent",border:`2px solid ${checked?phase?.color:"#444"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff"}}>
+                        {checked?"✓":""}
+                      </div>
+                      <span style={{fontSize:13,color:checked?C.text:"#AAA"}}>{t}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Project */}
+              {week?.project&&(
+                <div style={{background:C.card,borderRadius:12,padding:18,border:`1px solid ${phase?.color}44`,marginBottom:12}}>
+                  <div style={{fontWeight:700,marginBottom:8,color:phase?.accent}}>🛠 Projet de la semaine</div>
+                  <div style={{fontSize:13,color:"#CCC",lineHeight:1.6}}>{week.project}</div>
+                </div>
+              )}
+
+              {/* Resources */}
+              {week?.resources?.length>0&&(
+                <div style={{background:C.card,borderRadius:12,padding:18,border:`1px solid ${C.border}`}}>
+                  <div style={{fontWeight:700,marginBottom:10}}>📖 Ressources</div>
+                  {week.resources.map((r,i)=>(
+                    <div key={i} style={{padding:"7px 10px",background:C.bg,borderRadius:7,marginBottom:5,fontSize:12,color:"#AAA"}}>📌 {r}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── QUIZ ── */}
+        {tab==="quiz"&&(()=>{
+          if(!quizState){
+            // Show quiz selector
+            return(
+              <div>
+                <div style={{fontWeight:800,fontSize:20,marginBottom:20}}>🧪 Quiz par semaine</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+                  {PROGRAM.flatMap(p=>p.weeks.map(w=>({...w,phaseId:p.id,phaseColor:p.color,phaseIcon:p.icon,phaseTitle:p.title}))).map(w=>{
+                    const k=`${w.phaseId}__${w.id}`;
+                    const wp=progress[k];
+                    return(
+                      <div key={w.id} style={{background:C.card,borderRadius:10,padding:14,border:`1px solid ${wp?.quizPassed?"#F7C948":C.border}`}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                          <span style={{fontSize:10,color:w.phaseColor,fontWeight:700}}>{w.phaseIcon} Ph.{PROGRAM.findIndex(p=>p.id===w.phaseId)} · Sem.{w.week}</span>
+                          {wp?.quizPassed&&<span style={{color:"#F7C948"}}>🧪✓</span>}
+                        </div>
+                        <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>{w.title}</div>
+                        <button onClick={()=>startQuiz(w.phaseId,w.id)} style={{
+                          width:"100%",padding:"7px",borderRadius:7,border:"none",cursor:"pointer",
+                          background:wp?.quizPassed?"rgba(247,201,72,0.15)":"rgba(108,99,255,0.2)",
+                          color:wp?.quizPassed?"#F7C948":"#A89CFF",fontWeight:600,fontSize:12,
+                        }}>
+                          {wp?.quizPassed?"Refaire le quiz":"Commencer le quiz"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
+          const qPhase=PROGRAM.find(p=>p.id===quizState.phaseId);
+          const qWeek=qPhase.weeks.find(w=>w.id===quizState.weekId);
+          const currentQ=quizState.answers.length;
+
+          if(quizState.done){
+            const perfect=quizState.score===qWeek.quiz.length;
+            return(
+              <div style={{maxWidth:600,margin:"0 auto",textAlign:"center"}}>
+                <div style={{fontSize:60,marginBottom:16}}>{perfect?"🌟":quizState.score>=3?"✅":"💪"}</div>
+                <div style={{fontWeight:800,fontSize:28,marginBottom:8}}>
+                  {quizState.score}/{qWeek.quiz.length} bonnes réponses
+                </div>
+                <div style={{color:C.muted,fontSize:15,marginBottom:24}}>
+                  {perfect?"Parfait ! Tu maîtrises ce sujet.":quizState.score>=3?"Bonne progression !":"Continue à étudier et réessaie."}
+                </div>
+                {/* Review */}
+                <div style={{textAlign:"left",marginBottom:24}}>
+                  {qWeek.quiz.map((q,i)=>{
+                    const ans=quizState.answers[i];
+                    return(
+                      <div key={i} style={{background:C.card,borderRadius:10,padding:14,marginBottom:10,border:`1px solid ${ans?.correct?"#00C9A7":"#FF6B6B"}33`}}>
+                        <div style={{fontWeight:600,marginBottom:8,fontSize:13}}>{i+1}. {q.q}</div>
+                        {q.choices.map((c,ci)=>(
+                          <div key={ci} style={{padding:"6px 10px",borderRadius:6,marginBottom:4,fontSize:12,
+                            background:ci===q.a?"rgba(0,201,167,0.15)":ci===ans?.aIdx&&!ans?.correct?"rgba(255,107,107,0.15)":"transparent",
+                            color:ci===q.a?"#00C9A7":ci===ans?.aIdx&&!ans?.correct?"#FF6B6B":C.muted,
+                          }}>
+                            {ci===q.a?"✓ ":ci===ans?.aIdx&&!ans?.correct?"✗ ":""}{c}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+                  <button onClick={()=>setQuizState(null)} style={{padding:"10px 20px",borderRadius:8,border:"none",cursor:"pointer",background:"#6C63FF",color:"#fff",fontWeight:700}}>
+                    Tous les quiz
+                  </button>
+                  <button onClick={()=>startQuiz(quizState.phaseId,quizState.weekId)} style={{padding:"10px 20px",borderRadius:8,border:`1px solid ${C.border}`,cursor:"pointer",background:"transparent",color:C.muted,fontWeight:700}}>
+                    Réessayer
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          const q=qWeek.quiz[currentQ];
+          return(
+            <div style={{maxWidth:600,margin:"0 auto"}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:20}}>
+                <button onClick={()=>setQuizState(null)} style={{background:"transparent",border:"none",cursor:"pointer",color:C.muted,fontSize:13}}>← Retour</button>
+                <span style={{color:C.muted,fontSize:13}}>{qPhase.icon} {qWeek.title}</span>
+                <span style={{color:"#6C63FF",fontWeight:700,fontSize:13}}>{currentQ+1}/{qWeek.quiz.length}</span>
+              </div>
+              <div style={{background:C.border,borderRadius:99,height:6,marginBottom:24}}>
+                <div style={{height:"100%",borderRadius:99,width:`${(currentQ/qWeek.quiz.length)*100}%`,background:qPhase.color,transition:"width 0.3s"}}/>
+              </div>
+              <div style={{background:C.card,borderRadius:14,padding:24,border:`1px solid ${C.border}`,marginBottom:16}}>
+                <div style={{fontWeight:700,fontSize:17,lineHeight:1.5}}>{q.q}</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {q.choices.map((c,ci)=>(
+                  <button key={ci} onClick={()=>answerQuiz(currentQ,ci)} style={{
+                    padding:"14px 18px",borderRadius:10,border:`1px solid ${C.border}`,cursor:"pointer",
+                    background:C.card,color:C.text,fontWeight:600,fontSize:14,textAlign:"left",
+                    transition:"all 0.15s",
+                  }}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor=qPhase.color}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+                    <span style={{color:C.muted,marginRight:10}}>{["A","B","C","D"][ci]}.</span>{c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── JOURNAL ── */}
+        {tab==="journal"&&(
+          <div style={{maxWidth:700,margin:"0 auto"}}>
+            <div style={{fontWeight:800,fontSize:20,marginBottom:20}}>📖 Journal d'apprentissage</div>
+            <div style={{background:C.card,borderRadius:12,padding:20,border:`1px solid ${C.border}`,marginBottom:20}}>
+              <div style={{fontWeight:700,marginBottom:10}}>Nouvelle entrée — <span style={{color:C.muted,fontWeight:400,fontSize:12}}>{new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</span></div>
+              <textarea
+                value={journalEntry}
+                onChange={e=>setJournalEntry(e.target.value)}
+                placeholder="Qu'as-tu appris aujourd'hui ? Quelles difficultés as-tu rencontrées ? Qu'est-ce qui t'a surpris ?"
+                style={{width:"100%",minHeight:120,background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:12,color:C.text,fontSize:13,resize:"vertical",lineHeight:1.6,boxSizing:"border-box",outline:"none"}}
+              />
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10}}>
+                <span style={{fontSize:11,color:C.muted}}>+{XP_JOURNAL} XP par entrée · {journalHistory.length} entrées au total</span>
+                <button onClick={saveJournal} style={{padding:"8px 18px",borderRadius:8,border:"none",cursor:"pointer",background:"#6C63FF",color:"#fff",fontWeight:700,fontSize:13}}>
+                  Sauvegarder
+                </button>
+              </div>
+            </div>
+            {journalHistory.length===0?(
+              <div style={{textAlign:"center",color:C.muted,padding:40}}>Aucune entrée. Commence à écrire !</div>
+            ):(
+              journalHistory.map((e,i)=>(
+                <div key={i} style={{background:C.card,borderRadius:12,padding:18,border:`1px solid ${C.border}`,marginBottom:12}}>
+                  <div style={{fontSize:11,color:C.muted,marginBottom:8}}>{new Date(e.date).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}</div>
+                  <div style={{fontSize:13,lineHeight:1.7,color:"#CCC",whiteSpace:"pre-wrap"}}>{e.text}</div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* ── BADGES ── */}
+        {tab==="badges"&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div style={{fontWeight:800,fontSize:20}}>🏆 Badges & Récompenses</div>
+              <div style={{color:C.muted,fontSize:13}}>{meta.badges.length}/{BADGES.length} débloqués</div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:28}}>
+              {BADGES.map(b=>{
+                const unlocked=meta.badges.includes(b.id);
+                return(
+                  <div key={b.id} style={{background:C.card,borderRadius:12,padding:18,textAlign:"center",border:`1px solid ${unlocked?"#F7C948":"#1A1D2E"}`,opacity:unlocked?1:0.45}}>
+                    <div style={{fontSize:36,marginBottom:8,filter:unlocked?"none":"grayscale(1)"}}>{b.icon}</div>
+                    <div style={{fontWeight:700,fontSize:13,marginBottom:4,color:unlocked?"#F7C948":C.muted}}>{b.name}</div>
+                    <div style={{fontSize:11,color:C.muted}}>{b.desc}</div>
+                    {unlocked&&<div style={{marginTop:8,fontSize:10,color:"#F7C948"}}>✓ Débloqué</div>}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Levels */}
+            <div style={{fontWeight:800,fontSize:18,marginBottom:16}}>⬆️ Niveaux XP</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10}}>
+              {LEVELS.map((l,i)=>{
+                const current=getLevel(meta.xp).level===i+1;
+                const done=meta.xp>=l.min;
+                return(
+                  <div key={i} style={{background:C.card,borderRadius:10,padding:14,textAlign:"center",border:`1px solid ${current?"#6C63FF":done?"#6C63FF33":C.border}`}}>
+                    <div style={{fontSize:28,marginBottom:6}}>{l.icon}</div>
+                    <div style={{fontWeight:700,fontSize:12,color:current?"#A89CFF":done?"#6C63FF66":C.muted}}>Lv.{i+1}</div>
+                    <div style={{fontSize:11,fontWeight:600,marginBottom:4}}>{l.name}</div>
+                    <div style={{fontSize:10,color:C.muted}}>{l.min.toLocaleString()} XP</div>
+                    {current&&<div style={{marginTop:6,fontSize:10,color:"#A89CFF",fontWeight:700}}>← Tu es ici</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── PLANNING ── */}
+        {tab==="plan"&&(
+          <div style={{maxWidth:700,margin:"0 auto"}}>
+            <div style={{fontWeight:800,fontSize:20,marginBottom:6}}>🗓 Planning hebdomadaire</div>
+            <div style={{color:C.muted,fontSize:13,marginBottom:20}}>Basé sur ton avancement actuel · 3–4h/jour recommandées</div>
+
+            {/* Daily schedule */}
+            <div style={{background:C.card,borderRadius:12,padding:20,border:`1px solid ${C.border}`,marginBottom:20}}>
+              <div style={{fontWeight:700,marginBottom:16}}>📅 Répartition quotidienne type</div>
+              {[
+                {time:"07:00–08:00",task:"📚 Théorie : lire, regarder des vidéos, prendre des notes",color:"#6C63FF"},
+                {time:"08:00–09:30",task:"💻 Pratique : coder, résoudre des exercices",color:"#00C9A7"},
+                {time:"09:30–10:15",task:"🛠 Projet personnel en cours",color:"#FF6B6B"},
+                {time:"10:15–10:30",task:"🗞 Veille tech : Hacker News, Twitter, arXiv",color:"#F7C948"},
+              ].map((s,i)=>(
+                <div key={i} style={{display:"flex",gap:14,padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{fontWeight:700,fontSize:12,color:s.color,flexShrink:0,width:120}}>{s.time}</div>
+                  <div style={{fontSize:13,color:"#CCC"}}>{s.task}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* This week plan */}
+            <div style={{background:C.card,borderRadius:12,padding:20,border:`1px solid ${C.border}`,marginBottom:20}}>
+              <div style={{fontWeight:700,marginBottom:16}}>🗓 Plan de la semaine à venir</div>
+              {getWeeklyPlan().map((d,i)=>(
+                <div key={i} style={{display:"flex",gap:14,padding:"10px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <div style={{fontWeight:700,fontSize:12,color:"#A89CFF",flexShrink:0,width:80}}>{d.day}</div>
+                  <div style={{fontSize:13,color:"#CCC"}}>{d.task}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Anti-procrastination rules */}
+            <div style={{background:C.card,borderRadius:12,padding:20,border:`1px solid #FF6B6B44`}}>
+              <div style={{fontWeight:700,marginBottom:14,color:"#FF6B6B"}}>⚠️ Règles anti-triche & anti-abandon</div>
+              {[
+                "Ne coche un sujet ✓ que si tu peux l'expliquer à voix haute à quelqu'un.",
+                "Ne passe pas à la semaine suivante sans avoir fait le projet pratique.",
+                "Ne passe pas à la semaine suivante sans avoir réussi le quiz (≥ 3/4).",
+                "Si tu sautes un jour, pas de panique : reprends le lendemain, pas de double charge.",
+                "Si tu bloques plus de 30 min sur un sujet, cherche une autre ressource. Ne reste pas bloqué.",
+                "Commit du code sur GitHub chaque jour où tu codes. Pas de commit = pas de session.",
+                "Partage ton avancement avec quelqu'un une fois par semaine (ami, forum, Discord).",
+              ].map((r,i)=>(
+                <div key={i} style={{display:"flex",gap:10,padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                  <span style={{color:"#FF6B6B",fontWeight:700,flexShrink:0}}>{i+1}.</span>
+                  <span style={{fontSize:13,color:"#CCC",lineHeight:1.5}}>{r}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      <style>{`
+        @keyframes fadeIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+        ::-webkit-scrollbar{width:6px;height:6px} ::-webkit-scrollbar-track{background:#0F1118} ::-webkit-scrollbar-thumb{background:#2A2D40;border-radius:3px}
+        button:hover{filter:brightness(1.1)}
+        textarea:focus{border-color:#6C63FF !important}
+      `}</style>
+    </div>
+  );
+}
+
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+  </script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
