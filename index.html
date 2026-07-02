@@ -246,109 +246,2104 @@ const BADGES = [
 
 
 // ─────────────────────────────────────────────
-// COURSE MODAL — Claude AI powered lessons
+// COMPLETE COURSES DATABASE — All phases
 // ─────────────────────────────────────────────
-function CourseModal({topic, phaseColor, onClose}) {
-  const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [tab, setTab] = useState("cours"); // cours | exemple | exercice
-  const C = { bg:"#07080D", card:"#0F1118", border:"#1A1D2E", text:"#E2E4F0", muted:"#5A5F7A" };
-
-  useEffect(()=>{
-    loadLesson(tab);
-  },[tab, topic]);
-
-  async function loadLesson(type) {
-    setLoading(true);
-    setError(null);
-    setContent("");
-
-    const prompts = {
-      cours: `Tu es un professeur expert en informatique. Explique le sujet suivant en français de manière claire, structurée et adaptée à un débutant absolu qui veut devenir expert en tech. 
-
-Sujet : "${topic}"
-
-Format ta réponse ainsi :
-## 🎯 C'est quoi ?
-[Explication simple en 2-3 phrases]
+const COURSES = {
+"CPU, RAM, stockage, OS":{cours:`## 🎯 C'est quoi ?
+Un ordinateur est composé de 4 éléments : CPU (cerveau), RAM (mémoire de travail), Stockage (mémoire permanente) et OS (chef d'orchestre).
 
 ## 🔍 Comment ça marche ?
-[Explication détaillée avec analogies du quotidien]
+▸ **CPU** — Le cerveau. Exécute toutes les instructions. Vitesse en GHz (Intel i7, AMD Ryzen, Snapdragon).
+▸ **RAM** — Mémoire temporaire. Comme un bureau de travail. S'efface à l'extinction. 4GB = petit bureau.
+▸ **Stockage SSD/HDD** — Mémoire permanente. Tout reste après extinction. SSD = rapide, HDD = lent.
+▸ **OS** — Chef d'orchestre. Gère tout le matériel. Ex : Windows, Linux, Android, macOS.
 
-## 💡 Points clés à retenir
-[3-5 points essentiels sous forme de liste]
+## 💡 Points clés
+▸ CPU = cerveau, fait les calculs
+▸ RAM = mémoire temporaire (perdue à l'extinction)
+▸ Stockage = mémoire permanente
+▸ OS = logiciel qui coordonne tout le matériel
+▸ Ces 4 travaillent ensemble en permanence
 
 ## 🌍 Pourquoi c'est important ?
-[Contexte pratique et professionnel]
+96% des serveurs web tournent sur Linux. AWS, Docker, tout nécessite ces bases. Savoir pourquoi ton programme rame (RAM saturée ?) = compétence d'ingénieur.`,
+exemple:`## 📌 Exemple 1 : Ouvrir Chrome
+1. Tu cliques → l'OS reçoit le clic
+2. L'OS lit les fichiers Chrome depuis le stockage
+3. La RAM charge Chrome pour accès rapide
+4. Le CPU exécute le code et affiche l'interface
+Tout ça en moins d'une seconde !
 
-Sois concis, pédagogique et utilise des analogies simples. Maximum 400 mots.`,
+## 📌 Exemple 2 : Ton téléphone Android
+▸ CPU : Snapdragon ou MediaTek (cerveau)
+▸ RAM : 4-8GB (apps ouvertes simultanément)
+▸ Stockage : 64-256GB (photos, apps, musique)
+▸ OS : Android (gère tout)
 
-      exemple: `Tu es un professeur expert en informatique. Donne des exemples concrets et pratiques pour le sujet suivant en français.
-
-Sujet : "${topic}"
-
-Format ta réponse ainsi :
-## 📌 Exemple 1 : [titre]
-[Exemple concret avec explication]
-
-## 📌 Exemple 2 : [titre]  
-[Exemple concret avec explication]
-
-## 📌 Exemple 3 : [titre]
-[Exemple concret avec explication]
-
-Utilise des exemples de la vie réelle ou du code simple. Maximum 400 mots.`,
-
-      exercice: `Tu es un professeur expert en informatique. Crée des exercices pratiques pour le sujet suivant en français, adaptés à un débutant.
-
-Sujet : "${topic}"
-
-Format ta réponse ainsi :
-## ✏️ Exercice 1 (Facile)
-[Description de l'exercice]
-**Ce que tu dois faire :** [instructions claires]
+## 📌 Exemple 3 : Pourquoi ça rame ?
+10 onglets Chrome + Spotify + jeu :
+▸ RAM saturée → OS utilise le stockage comme RAM
+▸ Le stockage est 10x plus lent que la RAM
+▸ Résultat : tout rame !
+Solution : fermer des programmes ou ajouter de la RAM.`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Va dans Paramètres → À propos du téléphone
+▸ Note le CPU, RAM, stockage et version OS
+▸ Recherche les specs de ton CPU sur Google
 
 ## ✏️ Exercice 2 (Moyen)
-[Description de l'exercice]
-**Ce que tu dois faire :** [instructions claires]
+Sur Windows, ouvre le Gestionnaire des tâches (Ctrl+Shift+Échap) :
+▸ Quel % du CPU est utilisé ?
+▸ Combien de RAM est utilisée / disponible ?
+▸ Quel programme consomme le plus ?
 
 ## ✏️ Exercice 3 (Défi)
-[Description de l'exercice]
-**Ce que tu dois faire :** [instructions claires]
+▸ Dessine le schéma des 4 composants
+▸ Ajoute des flèches montrant les communications
+▸ Explique le schéma à voix haute
+▸ Compare les specs de 3 téléphones différents`},
 
-Maximum 400 mots.`
-    };
+"Binaire & hexadécimal":{cours:`## 🎯 C'est quoi ?
+Les ordinateurs ne comprennent que 0 et 1 (binaire). L'hexadécimal est un système à 16 symboles pour représenter les données de façon compacte.
 
-    try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: prompts[type] }]
-        })
-      });
-      const data = await response.json();
-      if(data.content && data.content[0]) {
-        setContent(data.content[0].text);
-      } else {
-        setError("Erreur de chargement. Réessaie.");
-      }
-    } catch(e) {
-      setError("Erreur réseau. Vérifie ta connexion.");
-    }
-    setLoading(false);
-  }
+## 🔍 Comment ça marche ?
+▸ **Binaire (base 2)** : 0 et 1. Positions : 128,64,32,16,8,4,2,1.
+  Exemple : 1010 = 8+0+2+0 = 10 en décimal
+▸ **Hexadécimal (base 16)** : 0-9 puis A=10,B=11,C=12,D=13,E=14,F=15.
+  FF = 15×16+15 = 255. Utilisé pour les couleurs (#FF6B6B).
+▸ **Conversion décimal → binaire** : diviser par 2, noter les restes.
 
-  // Simple markdown renderer
+## 💡 Points clés
+▸ 1 bit = un 0 ou un 1
+▸ 8 bits = 1 octet (byte)
+▸ 1 Ko = 1024 octets, 1 Mo = 1024 Ko, 1 Go = 1024 Mo
+▸ Hex est utilisé pour les couleurs, adresses mémoire, permissions
+
+## 🌍 Pourquoi c'est important ?
+Permissions Linux (chmod 755), couleurs CSS, adresses IP, encodage des données — tout repose sur le binaire et l'hexadécimal.`,
+exemple:`## 📌 Exemple 1 : Convertir 13 en binaire
+13 ÷ 2 = 6 reste 1
+6 ÷ 2 = 3 reste 0
+3 ÷ 2 = 1 reste 1
+1 ÷ 2 = 0 reste 1
+Lire de bas en haut : 1101
+Vérif : 8+4+0+1 = 13 ✓
+
+## 📌 Exemple 2 : Couleurs hexadécimales
+#FF0000 = rouge pur (FF=255 rouge, 00 vert, 00 bleu)
+#00FF00 = vert pur
+#0000FF = bleu pur
+#FFFFFF = blanc (tout au max)
+#000000 = noir (tout à zéro)
+#6C63FF = le violet de ton app TechRoadmap !
+
+## 📌 Exemple 3 : Tailles de fichiers
+2^10 = 1024 (pourquoi pas 1000 ?)
+Car les ordinateurs travaillent en base 2 !
+1024 octets = 1 Ko
+1024 Ko = 1 Mo
+1024 Mo = 1 Go
+Un film HD = ~4 Go = 4 × 1024 × 1024 × 1024 octets`,
+exercice:`## ✏️ Exercice 1 (Facile)
+Convertis en binaire :
+▸ 5 → ? (réponse : 101)
+▸ 10 → ? (réponse : 1010)
+▸ 15 → ? (réponse : 1111)
+▸ 8 → ? (réponse : 1000)
+
+## ✏️ Exercice 2 (Moyen)
+Convertis ces binaires en décimal :
+▸ 0111 → ? (7)
+▸ 1001 → ? (9)
+▸ 1111 → ? (15)
+▸ 10000 → ? (16)
+
+## ✏️ Exercice 3 (Défi)
+▸ Convertis 255 en hexadécimal → FF
+▸ Trouve la couleur hex de ta couleur préférée
+▸ Calcule : combien d'octets dans 2 Go ?
+▸ Convertis l'adresse IP 192.168.1.1 en binaire`},
+
+"Installer Ubuntu / VirtualBox":{cours:`## 🎯 C'est quoi ?
+Ubuntu est la distribution Linux la plus populaire pour débutants. VirtualBox permet de faire tourner Linux dans une fenêtre sur Windows, sans risque.
+
+## 🔍 Comment ça marche ?
+▸ **VirtualBox** crée une machine virtuelle — un ordinateur simulé. Tu peux installer Ubuntu dedans sans toucher à Windows.
+▸ **Ubuntu LTS** = Long Term Support. Version stable, maintenue 5 ans. Recommandée pour les débutants.
+▸ **Pourquoi Linux ?** 96% des serveurs web, tous les outils cloud (AWS, Docker, Kubernetes) tournent sur Linux.
+
+## 💡 Points clés
+▸ VirtualBox gratuit sur virtualbox.org
+▸ Ubuntu 22.04 LTS recommandé
+▸ Minimum : 2GB RAM pour la VM, 20GB disque
+▸ Alternative légère : WSL2 (Linux dans Windows 10/11)
+▸ Sur mobile : Termux (Linux sur Android)
+
+## 🌍 Pourquoi c'est important ?
+Tout expert tech utilise Linux quotidiennement. Maîtriser Linux maintenant te donne une longueur d'avance énorme.`,
+exemple:`## 📌 Exemple 1 : Linux en ligne immédiatement
+Va sur copy.sh/v/debian dans Chrome.
+C'est un Linux qui tourne dans le navigateur !
+Tape : ls, pwd, echo "Bonjour"
+Parfait pour pratiquer sans rien installer.
+
+## 📌 Exemple 2 : Installation VirtualBox + Ubuntu
+1. virtualbox.org → télécharge Windows hosts
+2. Installe VirtualBox
+3. ubuntu.com/download/desktop → Ubuntu 22.04 LTS
+4. VirtualBox : Nouveau → Linux → Ubuntu 64-bit
+5. RAM : 2048 MB, Disque : 20GB
+6. Démarre la VM, monte le .iso, suis l'installation
+
+## 📌 Exemple 3 : Alternatives si ordi trop lent
+▸ Repl.it → terminal Linux gratuit en ligne
+▸ GitHub Codespaces → Linux complet dans le navigateur
+▸ Termux sur Android → Linux sans ordi
+▸ WSL2 → Linux intégré dans Windows 10/11`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Va sur copy.sh/v/debian
+▸ Tape : uname -a (infos système)
+▸ Tape : whoami (nom utilisateur)
+▸ Tape : date (date et heure)
+▸ Note ce que chaque commande affiche
+
+## ✏️ Exercice 2 (Moyen)
+▸ Télécharge VirtualBox sur virtualbox.org
+▸ Installe-le sur Windows
+▸ Télécharge Ubuntu 22.04 LTS (.iso)
+▸ Crée une VM avec les bons paramètres
+
+## ✏️ Exercice 3 (Défi)
+▸ Lance Ubuntu dans VirtualBox
+▸ Complète l'installation
+▸ Ouvre le terminal (Ctrl+Alt+T)
+▸ Tape : lscpu, free -h, df -h
+▸ Note les infos de ton système Ubuntu`},
+
+"Navigation terminal : ls, cd, mkdir, cp, chmod":{cours:`## 🎯 C'est quoi ?
+Le terminal est l'outil principal de tout développeur. Tu contrôles l'ordinateur en tapant des commandes texte au lieu de cliquer.
+
+## 🔍 Les commandes essentielles
+▸ **ls** — Liste le contenu du dossier. ls -la = détaillé avec permissions.
+▸ **cd** — Change de dossier. cd Documents, cd ..(remonter), cd ~(home).
+▸ **mkdir** — Crée un dossier. mkdir mon-projet. mkdir -p a/b/c crée la hiérarchie.
+▸ **cp** — Copie. cp source.txt copie.txt. cp -r dossier/ copie/ pour dossiers.
+▸ **chmod** — Modifie permissions. chmod +x script.sh. chmod 755 (rwxr-xr-x).
+▸ **mv** — Déplace/renomme. rm — Supprime (attention !).
+
+## 💡 Points clés
+▸ Le terminal distingue majuscules et minuscules !
+▸ Tab = autocomplétion (très utile !)
+▸ Flèche haut = commande précédente
+▸ Ctrl+C = annuler une commande
+▸ man ls = affiche l'aide de ls
+
+## 🌍 Pourquoi c'est important ?
+Sur un serveur Linux, pas d'interface graphique. Tout se fait en terminal : déployer une app, configurer un serveur, automatiser des tâches.`,
+exemple:`## 📌 Exemple 1 : Créer un projet
+cd ~
+mkdir mon-projet
+cd mon-projet
+mkdir src tests docs
+touch README.md
+ls
+Résultat : docs  README.md  src  tests
+
+## 📌 Exemple 2 : Copier et organiser
+cp index.html index_backup.html
+cp -r src/ src_backup/
+ls -la
+-rw-r--r-- 1 user 1234 index.html
+
+## 📌 Exemple 3 : Permissions chmod
+touch script.sh
+chmod +x script.sh
+ls -la script.sh
+-rwxr-xr-x script.sh
+./script.sh`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ pwd → note où tu es
+▸ ls → liste les fichiers
+▸ cd / → va à la racine
+▸ ls → qu'est-ce que tu vois ?
+▸ cd ~ → retourne à la maison
+
+## ✏️ Exercice 2 (Moyen)
+Crée cette structure avec le terminal uniquement :
+projet/
+├── src/
+├── tests/
+└── README.txt
+Utilise : mkdir, touch, ls -R pour vérifier
+
+## ✏️ Exercice 3 (Défi)
+▸ Crée un fichier bonjour.sh
+▸ nano bonjour.sh → écris : echo "Bonjour !"
+▸ Ctrl+X, Y, Entrée pour sauvegarder
+▸ chmod +x bonjour.sh
+▸ ./bonjour.sh → tu dois voir "Bonjour !"`},
+
+"IP, DNS, HTTP, client/serveur":{cours:`## 🎯 C'est quoi ?
+Internet fonctionne grâce à des protocoles standardisés. IP adresse les machines, DNS traduit les noms en IP, HTTP transfère les pages web.
+
+## 🔍 Comment ça marche ?
+▸ **IP** — Adresse unique de chaque appareil sur internet. Ex : 192.168.1.1 (local), 8.8.8.8 (Google).
+▸ **DNS** — Annuaire d'internet. Traduit "google.com" → "142.250.74.46". Sans DNS, tu devrais mémoriser des IPs !
+▸ **HTTP/HTTPS** — Protocole de transfert web. HTTPS = chiffré avec SSL/TLS. Port 80 (HTTP), 443 (HTTPS).
+▸ **Client/Serveur** — Ton navigateur (client) envoie une requête, le serveur répond avec les données.
+
+## 💡 Points clés
+▸ DNS = annuaire (nom → IP)
+▸ HTTP = langue de communication web
+▸ HTTPS = HTTP chiffré (toujours préférer)
+▸ Port 80 = HTTP, Port 443 = HTTPS
+▸ Code 200 = OK, 404 = Non trouvé, 500 = Erreur serveur
+
+## 🌍 Pourquoi c'est important ?
+Tout développeur web travaille avec ces protocoles. La cybersécurité repose sur leur compréhension. Indispensable pour configurer des serveurs, créer des APIs, analyser du trafic réseau.`,
+exemple:`## 📌 Exemple 1 : Ouvrir google.com
+1. Navigateur demande au DNS : IP de google.com ?
+2. DNS répond : 142.250.74.46
+3. Navigateur envoie : GET / HTTP/1.1 Host: google.com
+4. Serveur Google répond avec le HTML
+5. Navigateur affiche la page
+
+## 📌 Exemple 2 : Requête HTTP
+GET /index.html HTTP/1.1
+Host: www.example.com
+User-Agent: Chrome/100
+Le serveur répond :
+HTTP/1.1 200 OK
+Content-Type: text/html
+[contenu HTML]
+
+## 📌 Exemple 3 : Adresses importantes
+192.168.1.1 → routeur de ta maison
+8.8.8.8 → DNS Google
+127.0.0.1 → localhost (toi-même)
+Teste dans le terminal : ping google.com`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Ouvre cmd (Windows) ou terminal
+▸ ping google.com → note l'adresse IP
+▸ nslookup facebook.com → quelle IP ?
+▸ ipconfig (Windows) → quelle est ton IP locale ?
+
+## ✏️ Exercice 2 (Moyen)
+▸ Ouvre Chrome → F12 → onglet Réseau
+▸ Recharge une page web
+▸ Clique sur la première requête
+▸ Identifie : méthode, status code, headers
+▸ Combien de requêtes pour charger la page ?
+
+## ✏️ Exercice 3 (Défi)
+▸ curl -I https://google.com (dans terminal)
+▸ Analyse les headers de réponse
+▸ Pourquoi le code est 301 et pas 200 ?
+▸ Cherche les codes HTTP 200,301,404,500
+▸ Explique chacun avec un exemple concret`},
+
+"Python : variables, types, conditions":{cours:`## 🎯 C'est quoi ?
+Python est le langage le plus populaire au monde. Variables = boîtes qui stockent des données. Types = nature des données. Conditions = prendre des décisions.
+
+## 🔍 Comment ça marche ?
+▸ **Variables** : nom = valeur. nom = "Alice", age = 25, taille = 1.75.
+▸ **Types** :
+  - int : entiers (42, -10, 0)
+  - float : décimaux (3.14, -0.5)
+  - str : texte ("Bonjour")
+  - bool : True ou False
+  - list : [1, 2, 3]
+  - dict : {"clé": "valeur"}
+▸ **Conditions** : if condition: elif autre: else:
+
+## 💡 Points clés
+▸ Python = indentation obligatoire (4 espaces)
+▸ Pas de point-virgule à la fin
+▸ type(x) pour connaître le type
+▸ print() pour afficher
+▸ input() pour saisir du texte
+
+## 🌍 Pourquoi c'est important ?
+Python est utilisé en IA, data science, cybersécurité, automatisation, web. C'est LE langage à maîtriser absolument en 2024.`,
+exemple:`## 📌 Exemple 1 : Variables et types
+nom = "ICHOLA"
+age = 20
+taille = 1.75
+etudiant = True
+print(nom, age, taille)
+print(type(nom))   # <class 'str'>
+print(type(age))   # <class 'int'>
+
+## 📌 Exemple 2 : Conditions
+note = 85
+if note >= 90:
+    print("Excellent !")
+elif note >= 70:
+    print("Bien !")
+elif note >= 50:
+    print("Passable")
+else:
+    print("À améliorer")
+
+## 📌 Exemple 3 : Opérateurs
+x = 10
+print(x > 5)          # True
+print(x == 10)        # True
+print(x > 5 and x < 20)  # True
+print(x < 5 or x > 8)    # True
+print(not (x == 10))      # False`,
+exercice:`## ✏️ Exercice 1 (Facile)
+Sur repl.it ou python.org/shell :
+▸ Crée nom, age, ville avec tes vraies infos
+▸ Affiche : "Je m'appelle X, j'ai X ans, j'habite à X"
+▸ Affiche le type de chaque variable
+
+## ✏️ Exercice 2 (Moyen)
+Créé un programme de catégorisation d'âge :
+▸ age < 13 → "Enfant"
+▸ 13 ≤ age < 18 → "Adolescent"
+▸ 18 ≤ age < 65 → "Adulte"
+▸ sinon → "Senior"
+Teste avec 5 âges différents.
+
+## ✏️ Exercice 3 (Défi)
+Calculateur de BMI :
+▸ poids = 70 kg, taille = 1.75 m
+▸ bmi = poids / (taille ** 2)
+▸ < 18.5 → Insuffisance pondérale
+▸ 18.5-25 → Poids normal
+▸ 25-30 → Surpoids
+▸ > 30 → Obésité
+▸ Affiche le BMI et la catégorie`},
+
+"Python : boucles for/while":{cours:`## 🎯 C'est quoi ?
+Les boucles répètent des instructions automatiquement. Sans elles, tu devrais écrire 1000 fois la même ligne pour 1000 calculs.
+
+## 🔍 Comment ça marche ?
+▸ **for** — Répète pour chaque élément d'une séquence.
+  for i in range(5): → 0,1,2,3,4
+  for item in liste: → chaque élément
+▸ **while** — Répète TANT QUE une condition est vraie.
+  while age < 18: → jusqu'à ce que age ≥ 18
+▸ **break** — Sortir de la boucle
+▸ **continue** — Passer à l'itération suivante
+▸ **range(start, stop, step)** — Génère une séquence
+
+## 💡 Points clés
+▸ for = quand tu sais combien de fois répéter
+▸ while = quand tu ne sais pas à l'avance
+▸ Attention aux boucles infinies !
+▸ range(10) = 0 à 9 (pas 10 !)
+▸ enumerate() donne index + valeur
+
+## 🌍 Pourquoi c'est important ?
+Les boucles = l'automatisation. Analyser des millions de données, scanner des réseaux, entraîner des modèles ML — tout utilise des boucles.`,
+exemple:`## 📌 Exemple 1 : Boucle for
+for i in range(5):
+    print(i)  # 0,1,2,3,4
+
+fruits = ["banane","mango","orange"]
+for fruit in fruits:
+    print("J'aime le", fruit)
+
+## 📌 Exemple 2 : Boucle while
+compteur = 0
+while compteur < 5:
+    print(compteur)
+    compteur += 1
+
+## 📌 Exemple 3 : Break et continue
+for i in range(10):
+    if i == 5:
+        break      # Arrête à 5
+    print(i)       # 0,1,2,3,4
+
+for i in range(10):
+    if i % 2 == 0:
+        continue   # Saute les pairs
+    print(i)       # 1,3,5,7,9`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Affiche les nombres de 1 à 20
+▸ Table de multiplication de 7 (7×1 à 7×10)
+▸ Calcule la somme de 1 à 100
+
+## ✏️ Exercice 2 (Moyen)
+▸ Demande un nombre N à l'utilisateur
+▸ Affiche si chaque nombre de 1 à N est pair ou impair
+▸ Compte combien sont pairs et impairs
+
+## ✏️ Exercice 3 (Défi)
+Jeu de devinette :
+▸ Génère un nombre aléatoire entre 1 et 100
+▸ Donne 7 tentatives à l'utilisateur
+▸ Après chaque tentative : "Trop grand","Trop petit" ou "Bravo !"
+▸ Si toutes épuisées : affiche le nombre secret
+▸ Compte les tentatives utilisées`},
+
+"Fonctions et portée":{cours:`## 🎯 C'est quoi ?
+Une fonction est un bloc de code réutilisable qui effectue une tâche précise. La portée définit où une variable est accessible.
+
+## 🔍 Comment ça marche ?
+▸ **def nom(params):* — Définir une fonction
+▸ **return** — Retourner une valeur
+▸ **Paramètres** — Variables d'entrée
+▸ **Arguments** — Valeurs passées à l'appel
+▸ **Portée locale** — Variable dans une fonction, accessible seulement dedans
+▸ **Portée globale** — Variable hors fonction, accessible partout
+
+## 💡 Points clés
+▸ DRY = Don't Repeat Yourself
+▸ Une fonction = une tâche précise
+▸ Noms : verbes, snake_case (calculer_bmi)
+▸ Variables locales disparaissent après l'appel
+▸ Paramètres par défaut : def f(x, y=10)
+
+## 🌍 Pourquoi c'est important ?
+Les fonctions sont la base de tout programme. En ML, chaque étape est une fonction. En cybersécurité, chaque vérification est une fonction. Concept le plus fondamental après les variables.`,
+exemple:`## 📌 Exemple 1 : Fonction simple
+def saluer(nom):
+    return "Bonjour " + nom + " !"
+
+print(saluer("ICHOLA"))  # Bonjour ICHOLA !
+
+def saluer(nom, langue="fr"):
+    if langue == "fr":
+        return "Bonjour " + nom
+    return "Hello " + nom
+
+## 📌 Exemple 2 : Portée (scope)
+x = 10  # Global
+
+def ma_fonction():
+    y = 20  # Local
+    print(x)  # OK : x est global
+    print(y)  # OK : y est local
+
+ma_fonction()
+# print(y)  # ERREUR : y n'existe pas ici !
+
+## 📌 Exemple 3 : Fonctions multiples
+def surface(l, L):
+    return l * L
+
+def perimetre(l, L):
+    return 2 * (l + L)
+
+def analyser(l, L):
+    s = surface(l, L)
+    p = perimetre(l, L)
+    return f"Surface: {s}, Périmètre: {p}"
+
+print(analyser(5, 3))`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ carre(n) → retourne n²
+▸ est_pair(n) → True si n est pair
+▸ salutation(prenom, nom) → "Bonjour Prenom NOM !"
+Teste chaque fonction avec 3 valeurs.
+
+## ✏️ Exercice 2 (Moyen)
+Calculatrice avec fonction :
+▸ calculer(a, b, op) où op = "+","-","*","/"
+▸ Gère la division par zéro
+▸ Retourne résultat ou message d'erreur
+▸ Test : calculer(10, 5, "*") → 50
+
+## ✏️ Exercice 3 (Défi)
+Gestionnaire de notes :
+▸ ajouter_note(nom, note) → dict global
+▸ moyenne(notes_liste) → calcule moyenne
+▸ mention(moy) → "Passable"/"Bien"/"Très bien"
+▸ bulletin(nom) → affiche tout
+Teste avec 5 étudiants fictifs.`},
+
+"Listes, tuples, dictionnaires":{cours:`## 🎯 C'est quoi ?
+Les structures de données fondamentales de Python pour stocker et organiser des collections de valeurs.
+
+## 🔍 Comment ça marche ?
+▸ **Liste** — Ordonnée et modifiable. [1,2,3], ["a","b"]. Accès : liste[0].
+▸ **Tuple** — Ordonnée et IMMUTABLE. (1,2,3). Données qui ne changent pas.
+▸ **Dictionnaire** — Paires clé-valeur. {"nom":"Alice","age":25}. Accès : dico["nom"].
+▸ **Set** — Sans doublons, non ordonné. {1,2,3}.
+
+## 💡 Points clés
+▸ Liste → données ordonnées qui changent
+▸ Tuple → données fixes (coordonnées GPS)
+▸ Dict → données associées (profil utilisateur)
+▸ len() pour la longueur de n'importe quelle collection
+▸ in pour vérifier l'existence
+
+## 🌍 Pourquoi c'est important ?
+En data science, les données sont dans des listes et dictionnaires. En ML, les datasets = listes de dictionnaires. Ces structures sont partout.`,
+exemple:`## 📌 Exemple 1 : Listes
+fruits = ["banane","mango","orange"]
+fruits.append("papaye")
+fruits.remove("mango")
+print(fruits[0])   # premier
+print(fruits[-1])  # dernier
+print(len(fruits)) # longueur
+fruits.sort()      # trier
+
+## 📌 Exemple 2 : Dictionnaires
+etudiant = {
+    "nom": "ICHOLA",
+    "age": 20,
+    "notes": [15,18,12,16]
+}
+print(etudiant["nom"])
+etudiant["ville"] = "Cotonou"
+moy = sum(etudiant["notes"])/len(etudiant["notes"])
+
+## 📌 Exemple 3 : Parcourir
+for fruit in fruits:
+    print(fruit)
+
+for cle, val in etudiant.items():
+    print(f"{cle}: {val}")
+
+carres = [x**2 for x in range(10)]`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Liste de 5 pays africains
+▸ Ajoute 2 pays avec append()
+▸ Supprime 1 pays avec remove()
+▸ Trie par ordre alphabétique
+▸ Affiche le 3ème pays
+
+## ✏️ Exercice 2 (Moyen)
+Dict pour un film : titre, année, réalisateur, acteurs (liste), note
+▸ Affiche toutes les infos
+▸ Ajoute une clé "vu" = True
+▸ Vérifie si "acteurs" est dans le dict
+
+## ✏️ Exercice 3 (Défi)
+Gestionnaire d'étudiants :
+▸ Liste de dictionnaires (chaque étudiant = dict)
+▸ Chaque étudiant : nom + 5 notes
+▸ Calcule la moyenne par étudiant
+▸ Trouve le meilleur étudiant
+▸ Affiche le classement`},
+
+"Lire/écrire fichiers":{cours:`## 🎯 C'est quoi ?
+Lire et écrire des fichiers permet à Python de persister des données : sauvegarder des résultats, lire des configurations, traiter des CSV, JSON.
+
+## 🔍 Comment ça marche ?
+▸ **open(fichier, mode)** — Ouvre un fichier.
+  Modes : 'r'(lecture), 'w'(écriture), 'a'(ajout), 'r+'(les deux)
+▸ **with open(...) as f:** — Ferme automatiquement le fichier
+▸ **f.read()** — Lit tout le fichier
+▸ **f.readlines()** — Lit ligne par ligne dans une liste
+▸ **f.write(texte)** — Écrit dans le fichier
+▸ **json.load() / json.dump()** — Lire/écrire du JSON
+
+## 💡 Points clés
+▸ Toujours utiliser with open() — fermeture automatique
+▸ 'w' ÉCRASE le fichier existant !
+▸ 'a' ajoute à la fin
+▸ encoding='utf-8' pour les caractères spéciaux
+▸ os.path.exists() pour vérifier avant d'ouvrir
+
+## 🌍 Pourquoi c'est important ?
+Tout programme sérieux lit et écrit des fichiers. En data engineering, tu liras des millions de lignes CSV. En cybersécurité, tu analyseras des logs.`,
+exemple:`## 📌 Exemple 1 : Lecture/écriture texte
+with open("notes.txt", "w", encoding="utf-8") as f:
+    f.write("Première ligne\n")
+    f.write("Deuxième ligne\n")
+
+with open("notes.txt", "r") as f:
+    for ligne in f:
+        print(ligne.strip())
+
+## 📌 Exemple 2 : JSON
+import json
+
+data = {"nom":"ICHOLA","age":20,"notes":[15,18,12]}
+with open("etudiant.json","w") as f:
+    json.dump(data, f, indent=4)
+
+with open("etudiant.json","r") as f:
+    d = json.load(f)
+    print(d["nom"])  # ICHOLA
+
+## 📌 Exemple 3 : CSV
+import csv
+
+with open("notes.csv","w",newline="") as f:
+    w = csv.writer(f)
+    w.writerow(["Nom","Note"])
+    w.writerow(["ICHOLA",18])`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Crée "journal.txt" avec 5 lignes
+▸ Lis et affiche le contenu
+▸ Ajoute 2 lignes avec mode 'a'
+▸ Relis et vérifie l'ajout
+
+## ✏️ Exercice 2 (Moyen)
+Gestionnaire de contacts JSON :
+▸ contacts.json avec 3 contacts (nom, tel, email)
+▸ Fonction pour ajouter un contact
+▸ Fonction pour chercher par nom
+▸ Fonction pour afficher tous
+
+## ✏️ Exercice 3 (Défi)
+▸ CSV avec 10 étudiants (nom, maths, physique, info)
+▸ Lis avec Python
+▸ Calcule la moyenne par étudiant
+▸ Trouve le meilleur par matière
+▸ Écris les résultats dans "resultats.csv"`},
+
+"Modules os, sys, json":{cours:`## 🎯 C'est quoi ?
+Python a une bibliothèque standard immense. os, sys et json sont parmi les modules les plus utilisés en développement professionnel.
+
+## 🔍 Module os
+▸ os.getcwd() → dossier actuel
+▸ os.listdir() → liste les fichiers
+▸ os.mkdir() / os.makedirs() → crée des dossiers
+▸ os.path.exists() → vérifie l'existence
+▸ os.path.join() → construit des chemins (portable)
+▸ os.remove() / os.rmdir() → supprimer
+
+## 🔍 Module sys
+▸ sys.argv → arguments de la ligne de commande
+▸ sys.exit(code) → quitter le programme
+▸ sys.path → chemins de recherche des modules
+▸ sys.version → version de Python
+
+## 🔍 Module json
+▸ json.loads(str) → string JSON → Python
+▸ json.dumps(obj) → Python → string JSON
+▸ json.load(file) → fichier → Python
+▸ json.dump(obj, file) → Python → fichier
+
+## 💡 Points clés
+▸ import os, import sys, import json
+▸ os.path.join() préférable aux "/" manuels (Windows compatible)
+▸ JSON = format universel d'échange de données
+▸ sys.argv[0] = nom du script, [1] = premier argument
+
+## 🌍 Pourquoi c'est important ?
+Ces modules sont dans 90% des scripts Python professionnels : automatisation, configuration, échange de données avec des APIs.`,
+exemple:`## 📌 Exemple 1 : Module os
+import os
+
+print(os.getcwd())  # dossier actuel
+fichiers = os.listdir(".")
+for f in fichiers:
+    print(f)
+
+os.makedirs("projet/src", exist_ok=True)
+if os.path.exists("config.json"):
+    print("Config trouvée !")
+
+## 📌 Exemple 2 : Module sys
+import sys
+
+# python script.py arg1 arg2
+print(sys.argv[0])  # nom du script
+print(sys.argv[1])  # premier argument
+
+if len(sys.argv) < 2:
+    print("Usage: python script.py <nom>")
+    sys.exit(1)
+
+## 📌 Exemple 3 : JSON + os
+import os, json
+
+def charger_config():
+    chemin = os.path.join(os.getcwd(),"config.json")
+    if os.path.exists(chemin):
+        with open(chemin) as f:
+            return json.load(f)
+    return {}
+
+config = charger_config()`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ print(os.getcwd())
+▸ Liste tous les fichiers du dossier actuel
+▸ Crée un dossier "test_os" avec os.mkdir()
+▸ Vérifie qu'il existe avec os.path.exists()
+▸ Supprime-le avec os.rmdir()
+
+## ✏️ Exercice 2 (Moyen)
+Script avec sys.argv :
+▸ Prend un prénom en argument
+▸ Sans argument → "Usage: python script.py <prenom>"
+▸ Avec argument → "Bonjour [prenom] !"
+▸ Lance : python script.py ICHOLA
+
+## ✏️ Exercice 3 (Défi)
+Gestionnaire de configuration :
+▸ sauvegarder_config(config_dict, fichier)
+▸ charger_config(fichier) → dict ou {}
+▸ Config par défaut : version, auteur, date_creation
+▸ Si config existante : charger et afficher
+▸ Sinon : créer et sauvegarder`},
+
+"Gestion d'erreurs (try/except)":{cours:`## 🎯 C'est quoi ?
+La gestion d'erreurs permet à ton programme de réagir intelligemment aux problèmes au lieu de planter. try/except = le filet de sécurité du code professionnel.
+
+## 🔍 Comment ça marche ?
+▸ **try** — Le code qui pourrait générer une erreur
+▸ **except TypeErreur** — Ce qui se passe si cette erreur survient
+▸ **else** — Exécuté seulement si pas d'erreur
+▸ **finally** — Toujours exécuté (avec ou sans erreur)
+▸ **raise** — Lever une exception manuellement
+
+Erreurs courantes :
+▸ ValueError : mauvaise valeur (int("abc"))
+▸ ZeroDivisionError : division par zéro
+▸ FileNotFoundError : fichier introuvable
+▸ KeyError : clé inexistante dans un dict
+▸ IndexError : index hors limites
+
+## 💡 Points clés
+▸ Ne jamais utiliser except: seul (trop large !)
+▸ Capturer les exceptions spécifiques
+▸ finally pour nettoyer (fermer fichiers, connexions)
+▸ Exception personnalisée : class MonErreur(Exception)
+
+## 🌍 Pourquoi c'est important ?
+Un programme professionnel ne plante jamais. Les erreurs non gérées font planter les serveurs en production. C'est une compétence de développeur senior.`,
+exemple:`## 📌 Exemple 1 : try/except basique
+try:
+    nombre = int(input("Entrez un nombre: "))
+    resultat = 100 / nombre
+    print("Résultat:", resultat)
+except ValueError:
+    print("Ce n'est pas un nombre !")
+except ZeroDivisionError:
+    print("Division par zéro !")
+
+## 📌 Exemple 2 : else et finally
+try:
+    fichier = open("data.txt","r")
+    contenu = fichier.read()
+except FileNotFoundError:
+    print("Fichier introuvable !")
+else:
+    print("Lu avec succès !")
+    print(contenu)
+finally:
+    print("Opération terminée")
+
+## 📌 Exemple 3 : Exception personnalisée
+class AgeInvalide(Exception):
+    pass
+
+def verifier_age(age):
+    if age < 0:
+        raise AgeInvalide("Âge négatif impossible !")
+    return True
+
+try:
+    verifier_age(-5)
+except AgeInvalide as e:
+    print(f"Erreur: {e}")`,
+exercice:`## ✏️ Exercice 1 (Facile)
+Calculatrice sécurisée :
+▸ Demande deux nombres à l'utilisateur
+▸ Gère ValueError si l'utilisateur tape du texte
+▸ Gère ZeroDivisionError pour la division
+▸ Affiche résultat ou message d'erreur
+
+## ✏️ Exercice 2 (Moyen)
+Lecteur de fichier robuste :
+▸ Demande un nom de fichier
+▸ FileNotFoundError → "Voulez-vous le créer ?"
+▸ PermissionError → "Pas de permission"
+▸ finally → "Fin de l'opération"
+
+## ✏️ Exercice 3 (Défi)
+Système de validation :
+▸ EmailInvalide(Exception) si pas de "@"
+▸ MotDePasseFaible(Exception) si < 8 caractères
+▸ inscription(email, mdp) → appelle les deux
+▸ Teste avec des données valides et invalides`},
+
+"Modules datetime, math":{cours:`## 🎯 C'est quoi ?
+datetime gère les dates et heures. math fournit des fonctions mathématiques avancées. Deux modules standards Python essentiels.
+
+## 🔍 Module datetime
+▸ datetime.now() → date et heure actuelles
+▸ datetime(2024, 1, 15) → date spécifique
+▸ timedelta(days=7) → durée de 7 jours
+▸ strftime("%d/%m/%Y") → formater une date
+▸ strptime("15/01/2024","%d/%m/%Y") → parser
+
+## 🔍 Module math
+▸ math.sqrt(16) → 4.0
+▸ math.pi → 3.14159...
+▸ math.ceil(4.2) → 5 (arrondi supérieur)
+▸ math.floor(4.8) → 4 (arrondi inférieur)
+▸ math.factorial(5) → 120
+▸ math.log(100,10) → 2.0
+
+## 💡 Points clés
+▸ from datetime import datetime, timedelta
+▸ from math import sqrt, pi
+▸ Les dates sont des objets, pas des strings
+▸ timedelta permet l'arithmétique sur les dates
+
+## 🌍 Pourquoi c'est important ?
+Les dates sont partout : logs, transactions, séries temporelles en ML. Les maths sont fondamentaux pour les algorithmes, la crypto, et le ML.`,
+exemple:`## 📌 Exemple 1 : Module datetime
+from datetime import datetime, timedelta
+
+maintenant = datetime.now()
+print(maintenant.strftime("%d/%m/%Y à %H:%M"))
+
+dans_30_jours = maintenant + timedelta(days=30)
+print(dans_30_jours.strftime("%d/%m/%Y"))
+
+naissance = datetime(2004, 6, 15)
+age_jours = (maintenant - naissance).days
+print(f"Tu as {age_jours//365} ans")
+
+## 📌 Exemple 2 : Module math
+import math
+
+print(math.sqrt(144))     # 12.0
+print(math.pi)            # 3.14159...
+print(math.ceil(4.1))     # 5
+print(math.floor(4.9))    # 4
+print(math.factorial(5))  # 120
+
+rayon = 5
+surface = math.pi * rayon ** 2
+print(f"Surface: {surface:.2f}")  # 78.54
+
+## 📌 Exemple 3 : Application pratique
+from datetime import datetime, timedelta
+
+def jours_avant(date_str):
+    date = datetime.strptime(date_str, "%d/%m/%Y")
+    diff = date - datetime.now()
+    return diff.days
+
+print(jours_avant("31/12/2024"))`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Affiche la date actuelle formatée : "Nous sommes le JJ/MM/AAAA"
+▸ Calcule dans combien de jours on sera en 2030
+▸ Affiche le jour de la semaine de ta date de naissance
+
+## ✏️ Exercice 2 (Moyen)
+▸ Diagonale d'un rectangle : sqrt(a²+b²)
+▸ Surface d'un cercle : π×r²
+▸ Convertis degrés en radians : math.radians()
+▸ Affiche les 10 premières puissances de 2
+
+## ✏️ Exercice 3 (Défi)
+Suivi de formation :
+▸ Date de début : aujourd'hui
+▸ Durée : 48 mois
+▸ Calcule la date de fin exacte
+▸ Calcule le % de temps écoulé
+▸ Affiche combien de jours restent pour chaque phase`},
+
+"Git : init, add, commit, push":{cours:`## 🎯 C'est quoi ?
+Git est le système de contrôle de version utilisé par 100% des équipes de développement. Il suit l'historique de ton code et permet la collaboration.
+
+## 🔍 Les commandes fondamentales
+▸ **git init** — Initialise un dépôt Git
+▸ **git add .** — Ajoute tous les fichiers modifiés au staging
+▸ **git commit -m "message"** — Enregistre les changements
+▸ **git push** — Envoie vers GitHub
+▸ **git pull** — Récupère les derniers changements
+▸ **git status** — État des fichiers
+▸ **git log --oneline** — Historique compact
+▸ **git diff** — Voir les modifications
+
+## 💡 Points clés
+▸ Committe souvent (chaque petite fonctionnalité)
+▸ Messages clairs : "Ajoute fonction de connexion"
+▸ Ne jamais committer des mots de passe !
+▸ .gitignore pour exclure des fichiers
+▸ Les branches permettent de travailler en parallèle
+
+## 🌍 Pourquoi c'est important ?
+Ton profil GitHub = ton CV technique. Tout recruteur tech regarde tes contributions. Un beau historique de commits montre ta rigueur et ta régularité.`,
+exemple:`## 📌 Exemple 1 : Premier dépôt
+mkdir mon-projet
+cd mon-projet
+git init
+echo "# Mon Projet" > README.md
+git add README.md
+git commit -m "Premier commit : ajout README"
+
+## 📌 Exemple 2 : Workflow quotidien
+git status           # Voir les changements
+git add .            # Ajouter tout
+git commit -m "Corrige bug dans calculatrice"
+git push origin main # Envoyer sur GitHub
+
+git pull origin main # Récupérer les changements
+
+## 📌 Exemple 3 : Connecter à GitHub
+git remote add origin https://github.com/user/repo.git
+git branch -M main
+git push -u origin main
+git remote -v  # Voir les remotes`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Installe Git (git-scm.com)
+▸ Configure ton identité :
+  git config --global user.name "Ton Nom"
+  git config --global user.email "ton@email.com"
+▸ Crée un dossier, git init, premier commit
+
+## ✏️ Exercice 2 (Moyen)
+▸ Crée un repo sur GitHub
+▸ Connecte ton dépôt local : git remote add origin...
+▸ Push ton README.md
+▸ Modifie et fais un 2ème commit + push
+▸ Vérifie les 2 commits sur GitHub
+
+## ✏️ Exercice 3 (Défi)
+▸ Crée un projet Python simple
+▸ Crée un .gitignore (__pycache__, .pyc)
+▸ Fais 5 commits différents avec messages clairs
+▸ Push sur GitHub
+▸ git log --oneline pour voir l'historique`},
+
+"GitHub : créer profil et dépôt":{cours:`## 🎯 C'est quoi ?
+GitHub est la plateforme de collaboration de code la plus utilisée au monde. Ton profil GitHub est ton portfolio technique visible par tous les recruteurs.
+
+## 🔍 Les éléments clés
+▸ **Profile README** — S'affiche sur ton profil comme une carte de visite
+▸ **Repositories** — Tes projets de code
+▸ **Contributions** — Le graphique vert de tes activités (commits quotidiens !)
+▸ **Stars** — Marquer des projets intéressants
+▸ **Fork** — Copier un projet pour le modifier
+▸ **Issues** — Signaler des bugs
+▸ **Pull Request** — Proposer des modifications
+
+## 💡 Points clés
+▸ Username professionnel (prénom.nom ou pseudo tech)
+▸ Photo de profil sérieuse
+▸ Bio claire : "Étudiant IA & cybersécurité | Bénin 🇧🇯"
+▸ Commits quotidiens = beau graphique vert
+▸ README soigné = premier signe de professionnalisme
+
+## 🌍 Pourquoi c'est important ?
+Un recruteur Google ou Microsoft regarde ton GitHub AVANT ton CV. Un profil actif avec de bons projets vaut mieux qu'un diplôme. Commence maintenant — dans 4 ans il sera impressionnant.`,
+exemple:`## 📌 Exemple 1 : Profile README
+Crée un repo nommé exactement comme ton username.
+Contenu du README :
+# 👋 Bonjour, je suis ICHOLA !
+🎯 Étudiant en développement IA et cybersécurité
+🌍 Basé au Bénin 🇧🇯
+🚀 Formation intensive 48 mois
+📚 Python, SQL, Linux, Bash
+💡 Objectif : Expert IA & fondateur de startup
+
+## 📌 Exemple 2 : Bon README de projet
+# Calculatrice Python
+Simple calculatrice avec gestion d'erreurs.
+
+## Installation
+pip install -r requirements.txt
+python main.py
+
+## Fonctionnalités
+- Addition, soustraction, multiplication, division
+- Gestion des erreurs complète
+
+## 📌 Exemple 3 : Structure d'un bon dépôt
+mon-projet/
+├── README.md
+├── .gitignore
+├── requirements.txt
+├── main.py
+├── src/
+└── tests/`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Photo de profil professionnelle
+▸ Nom complet visible
+▸ Bio impactante et courte
+▸ Localisation : Bénin
+▸ Crée ton Profile README
+
+## ✏️ Exercice 2 (Moyen)
+Crée un repo "python-exercices" :
+▸ README.md avec description
+▸ .gitignore pour Python
+▸ Un dossier par semaine
+▸ Mets tes exercices Codewars dedans
+▸ Push tout sur GitHub
+
+## ✏️ Exercice 3 (Défi)
+▸ Trouve 3 projets Python intéressants sur GitHub
+▸ Star chacun
+▸ Fork l'un d'eux
+▸ Clone en local, modifie le README
+▸ Commit, push, ouvre une Pull Request`},
+
+"Lire fichiers CSV avec Python":{cours:`## 🎯 C'est quoi ?
+CSV (Comma-Separated Values) est le format le plus utilisé pour les données tabulaires. Python permet de lire, écrire et analyser des CSV facilement.
+
+## 🔍 Comment ça marche ?
+▸ **csv.reader()** — Lit un CSV ligne par ligne (liste de listes)
+▸ **csv.DictReader()** — Lit avec en-têtes comme clés (dict par ligne)
+▸ **csv.writer()** — Écrit dans un CSV
+▸ **csv.DictWriter()** — Écrit avec en-têtes
+▸ **Pandas pd.read_csv()** — Pour les gros volumes
+
+Structure CSV :
+nom,age,ville
+Alice,25,Paris
+Bob,30,Lyon
+
+## 💡 Points clés
+▸ Le délimiteur peut être "," ";" ou Tab
+▸ DictReader est plus pratique que reader
+▸ newline='' pour éviter les lignes vides (Windows)
+▸ encoding='utf-8' pour les caractères spéciaux
+▸ next(reader) pour sauter l'en-tête
+
+## 🌍 Pourquoi c'est important ?
+En data engineering, tu liras des millions de lignes CSV. Kaggle fournit les datasets en CSV. Les logs système sont souvent en CSV.`,
+exemple:`## 📌 Exemple 1 : Lire un CSV
+import csv
+
+with open("etudiants.csv","r",encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for etudiant in reader:
+        print(etudiant["nom"], etudiant["note"])
+
+## 📌 Exemple 2 : Écrire un CSV
+import csv
+
+etudiants = [
+    {"nom":"Alice","note":18},
+    {"nom":"Bob","note":15}
+]
+with open("notes.csv","w",newline="") as f:
+    writer = csv.DictWriter(f,fieldnames=["nom","note"])
+    writer.writeheader()
+    writer.writerows(etudiants)
+
+## 📌 Exemple 3 : Analyser un CSV
+def analyser_notes(fichier):
+    notes = []
+    with open(fichier,"r") as f:
+        for row in csv.DictReader(f):
+            notes.append(float(row["note"]))
+    return {"moyenne":sum(notes)/len(notes),"max":max(notes),"min":min(notes)}`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ Crée "produits.csv" avec 5 produits (nom, prix, quantite)
+▸ Lis avec DictReader
+▸ Affiche : "Produit: X | Prix: X FCFA"
+▸ Calcule le stock total (prix × quantité)
+
+## ✏️ Exercice 2 (Moyen)
+▸ CSV avec 10 étudiants et 3 matières
+▸ Calcule la moyenne par étudiant
+▸ Calcule la moyenne par matière
+▸ Affiche l'étudiant avec la meilleure moyenne
+▸ Écris les résultats dans "resultats.csv"
+
+## ✏️ Exercice 3 (Défi)
+▸ Télécharge un dataset CSV sur Kaggle
+▸ Lis avec Python
+▸ Compte lignes et colonnes
+▸ Affiche les 5 premières lignes
+▸ Calcule des statistiques basiques`},
+
+"Calcul de statistiques simples":{cours:`## 🎯 C'est quoi ?
+Les statistiques descriptives résument et permettent de comprendre un ensemble de données : moyenne, médiane, mode, écart-type, min, max.
+
+## 🔍 Les statistiques essentielles
+▸ **Moyenne** — Somme / nombre. Sensible aux valeurs extrêmes.
+▸ **Médiane** — Valeur du milieu quand triée. Robuste aux extrêmes.
+▸ **Mode** — Valeur la plus fréquente.
+▸ **Écart-type** — Mesure la dispersion des données.
+▸ **Min/Max** — Valeurs extrêmes.
+▸ **Quartiles** — Q1 (25%), Q2 (50%=médiane), Q3 (75%).
+
+## 💡 Points clés
+▸ import statistics (module natif Python)
+▸ La moyenne est affectée par les valeurs aberrantes
+▸ La médiane est plus robuste pour les salaires
+▸ L'écart-type mesure la dispersion
+▸ NumPy pour les gros volumes (np.mean, np.std)
+
+## 🌍 Pourquoi c'est important ?
+Toute analyse de données commence par les statistiques descriptives. En ML, tu dois comprendre tes données avant de les modéliser.`,
+exemple:`## 📌 Exemple 1 : Module statistics
+import statistics
+
+notes = [15,18,12,16,14,18,10,17,13,16]
+print("Moyenne:", statistics.mean(notes))    # 14.9
+print("Médiane:", statistics.median(notes)) # 15.5
+print("Mode:", statistics.mode(notes))      # 18
+print("Std:", statistics.stdev(notes))      # 2.42
+print("Min:", min(notes))                    # 10
+print("Max:", max(notes))                    # 18
+
+## 📌 Exemple 2 : Salaires
+import numpy as np
+
+salaires = [250000,300000,280000,350000,1500000]
+print("Moyenne:", np.mean(salaires))   # Affectée par 1.5M
+print("Médiane:", np.median(salaires)) # Plus représentative
+print("Std:", np.std(salaires))
+
+## 📌 Exemple 3 : Analyse complète
+def analyser(data):
+    import statistics as st
+    return {
+        "n": len(data),
+        "moyenne": round(st.mean(data),2),
+        "mediane": st.median(data),
+        "min": min(data),
+        "max": max(data)
+    }`,
+exercice:`## ✏️ Exercice 1 (Facile)
+Avec une liste de 10 notes :
+▸ Calcule la moyenne manuellement (sum/len)
+▸ Calcule min et max
+▸ Trie et trouve la médiane manuellement
+▸ Vérifie avec statistics.median()
+
+## ✏️ Exercice 2 (Moyen)
+salaires = [150000,200000,175000,350000,2000000,160000]
+▸ Calcule moyenne et médiane
+▸ Explique pourquoi elles diffèrent
+▸ Identifie la valeur aberrante
+▸ Recalcule sans elle
+
+## ✏️ Exercice 3 (Défi)
+▸ Crée un CSV avec des données (températures, ventes...)
+▸ Lis le CSV
+▸ Applique toutes les statistiques sur une colonne
+▸ Génère un rapport dans "rapport.txt"
+▸ Identifie les valeurs aberrantes (> moy + 2×std)`},
+
+"Complexité O(n)":{cours:`## 🎯 C'est quoi ?
+La notation Big O décrit comment le temps d'exécution d'un algorithme évolue en fonction de la taille des données. Indispensable pour écrire du code efficace.
+
+## 🔍 Les complexités principales
+▸ **O(1)** — Constant. Accès à un tableau par index. Toujours le même temps.
+▸ **O(log n)** — Logarithmique. Recherche binaire. Très efficace.
+▸ **O(n)** — Linéaire. Parcours d'une liste. Proportionnel à n.
+▸ **O(n log n)** — Tri efficace (merge sort, quicksort).
+▸ **O(n²)** — Deux boucles imbriquées. Tri bulles. Lent !
+▸ **O(2ⁿ)** — Exponentiel. Fibonacci naïf. Très lent !
+
+## 💡 Points clés
+▸ On analyse le pire cas (worst case)
+▸ Les constantes sont ignorées : O(2n) = O(n)
+▸ On garde le terme dominant : O(n²+n) = O(n²)
+▸ Pour n=1000 : O(n)=1000 ops, O(n²)=1,000,000 ops !
+▸ dict["clé"] = O(1) (table de hachage)
+
+## 🌍 Pourquoi c'est important ?
+Un algorithme O(n²) sur 1 million d'éléments = des heures. O(n log n) = quelques secondes. Les entretiens Google/Amazon testent systématiquement la complexité.`,
+exemple:`## 📌 Exemple 1 : O(1) vs O(n)
+def premier_element(liste):
+    return liste[0]  # O(1) - toujours 1 opération
+
+def trouver_max(liste):
+    m = liste[0]
+    for e in liste:  # O(n) - n opérations
+        if e > m:
+            m = e
+    return m
+
+## 📌 Exemple 2 : O(n²) amélioré en O(n)
+# O(n²) - double boucle
+def doublons_lent(liste):
+    for i in range(len(liste)):
+        for j in range(i+1,len(liste)):
+            if liste[i]==liste[j]:
+                return True
+    return False
+
+# O(n) - avec un set
+def doublons_rapide(liste):
+    vus = set()
+    for e in liste:
+        if e in vus:
+            return True
+        vus.add(e)
+    return False
+
+## 📌 Exemple 3 : Mesurer le temps
+import time
+
+liste = list(range(10000))
+for fn in [doublons_lent, doublons_rapide]:
+    debut = time.time()
+    fn(liste)
+    print(f"{fn.__name__}: {time.time()-debut:.4f}s")`,
+exercice:`## ✏️ Exercice 1 (Facile)
+Identifie la complexité :
+▸ liste[5] → O(?)
+▸ Parcourir n éléments → O(?)
+▸ Deux boucles imbriquées sur n → O(?)
+▸ dict["clé"] → O(?)
+▸ Diviser par 2 jusqu'à 1 → O(?)
+
+## ✏️ Exercice 2 (Moyen)
+▸ Chercher dans une liste (O(n)) vs set (O(1))
+▸ Mesure le temps pour une liste de 100000 éléments
+▸ Améliore le code de doublons de O(n²) à O(n)
+
+## ✏️ Exercice 3 (Défi)
+▸ Recherche linéaire vs recherche binaire
+▸ Liste de 1 million d'éléments
+▸ Mesure et compare les temps
+▸ Calcule combien de fois la binaire est plus rapide
+▸ Explique pourquoi log₂(1000000) ≈ 20`},
+
+"Récursion":{cours:`## 🎯 C'est quoi ?
+La récursion = une fonction qui s'appelle elle-même. Technique puissante pour des problèmes décomposables en sous-problèmes identiques.
+
+## 🔍 Comment ça marche ?
+▸ **Cas de base** — La condition d'arrêt (OBLIGATOIRE sinon boucle infinie !)
+▸ **Cas récursif** — La fonction s'appelle avec un problème plus petit
+▸ **Pile d'appels** — Chaque appel crée un nouveau cadre en mémoire
+
+Structure :
+def fonction(n):
+    if n == 0:          # Cas de base
+        return 1
+    return n * fonction(n-1)  # Récursif
+
+## 💡 Points clés
+▸ Toujours définir le cas de base EN PREMIER
+▸ Chaque appel doit se rapprocher du cas de base
+▸ Python limite la récursion à ~1000 appels
+▸ @lru_cache pour mémoriser les résultats (mémoïsation)
+▸ La récursion est plus élégante mais consomme plus de mémoire
+
+## 🌍 Pourquoi c'est important ?
+Arbres, graphes, algorithmes de tri (merge sort), fractales, parseurs — tout utilise la récursion. Questions classiques en entretiens techniques.`,
+exemple:`## 📌 Exemple 1 : Factorielle
+def factorielle(n):
+    if n <= 1:           # Cas de base
+        return 1
+    return n * factorielle(n-1)  # Récursif
+
+# 5! = 5×4×3×2×1 = 120
+print(factorielle(5))  # 120
+
+## 📌 Exemple 2 : Fibonacci
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n-1) + fib(n-2)
+
+# Optimisé avec mémoïsation
+from functools import lru_cache
+@lru_cache(maxsize=None)
+def fib_rapide(n):
+    if n <= 1:
+        return n
+    return fib_rapide(n-1) + fib_rapide(n-2)
+
+## 📌 Exemple 3 : Somme récursive
+def somme(liste):
+    if len(liste) == 0:
+        return 0
+    return liste[0] + somme(liste[1:])
+
+print(somme([1,2,3,4]))  # 10`,
+exercice:`## ✏️ Exercice 1 (Facile)
+▸ puissance(base, exp) → base^exp
+▸ compter(n) → affiche n, n-1, ..., 1, "Décollage !"
+▸ somme_chiffres(n) → somme des chiffres (123 → 6)
+
+## ✏️ Exercice 2 (Moyen)
+▸ palindrome(s) → True si la chaîne est un palindrome
+▸ inverser_liste(l) → liste inversée récursivement
+▸ aplatir([[1,[2,3]],[4]]) → [1,2,3,4]
+
+## ✏️ Exercice 3 (Défi)
+Tour de Hanoi :
+▸ hanoi(n, source, cible, auxiliaire)
+▸ Affiche chaque déplacement
+▸ Teste avec n=3 (7 mouvements)
+▸ Compte le nombre d'appels
+▸ Quelle complexité ? (2^n - 1)`},
+};
+
+"Tri par insertion, tri bulles":{cours:`## 🎯 C'est quoi ?
+Le tri bulles compare deux éléments adjacents et les échange si nécessaire (O(n²)). Le tri par insertion insère chaque élément à sa bonne position, comme trier des cartes.
+
+## 🔍 Tri bulles
+▸ Compare éléments adjacents, échange si nécessaire
+▸ Les grands éléments remontent comme des bulles
+▸ Complexité : O(n²)
+
+## 🔍 Tri par insertion
+▸ Construit le tableau trié un élément à la fois
+▸ O(n²) en général, O(n) si déjà trié
+▸ Efficace pour les petites listes (<50 éléments)
+
+## 💡 Points clés
+▸ Les deux sont O(n²) = lents pour les grandes listes
+▸ Python utilise Timsort O(n log n) pour list.sort()
+▸ Comprendre ces tris = comprendre les algorithmes
+▸ Base pour comprendre merge sort et quicksort
+
+## 🌍 Pourquoi c'est important ?
+Incontournables en entretiens techniques. Google, Amazon, Meta testent les algorithmes de tri.`,exemple:`## 📌 Exemple 1 : Tri bulles
+def tri_bulles(l):
+    n = len(l)
+    for i in range(n):
+        for j in range(0, n-i-1):
+            if l[j] > l[j+1]:
+                l[j], l[j+1] = l[j+1], l[j]
+    return l
+
+print(tri_bulles([64,34,25,12,22]))
+# [12,22,25,34,64]
+
+## 📌 Exemple 2 : Tri par insertion
+def tri_insertion(l):
+    for i in range(1, len(l)):
+        cle = l[i]
+        j = i - 1
+        while j >= 0 and l[j] > cle:
+            l[j+1] = l[j]
+            j -= 1
+        l[j+1] = cle
+    return l
+
+## 📌 Exemple 3 : Comparaison
+import time, random
+liste = random.sample(range(10000), 1000)
+for fn in [tri_bulles, tri_insertion, sorted]:
+    debut = time.time()
+    fn(liste.copy())
+    print(f"{fn.__name__}: {time.time()-debut:.4f}s")`,exercice:`## ✏️ Exercice 1 (Facile)
+▸ Implémente le tri bulles
+▸ Trace chaque étape pour [5,3,8,1,9,2]
+▸ Compte le nombre d'échanges
+▸ Teste avec [1,2,3,4,5] (déjà trié)
+
+## ✏️ Exercice 2 (Moyen)
+▸ Implémente le tri par insertion
+▸ Ajoute un compteur d'opérations
+▸ Compare les deux sur des listes de 10, 100, 1000 éléments
+
+## ✏️ Exercice 3 (Défi)
+▸ Optimise le tri bulles (arrêter si aucun échange)
+▸ Crée comparer_tris(n) qui mesure les 3 tris
+▸ Identifie le plus rapide et explique pourquoi`},
+
+"Recherche binaire":{cours:`## 🎯 C'est quoi ?
+La recherche binaire trouve un élément dans une liste TRIÉE en divisant l'espace par 2 à chaque étape. Complexité O(log n) — incroyablement rapide !
+
+## 🔍 Comment ça marche ?
+1. Prends l'élément du milieu
+2. Si c'est l'élément → trouvé !
+3. Si cherché < milieu → cherche à gauche
+4. Si cherché > milieu → cherche à droite
+5. Répète jusqu'à trouver ou zone vide
+
+## 💡 Points clés
+▸ 1000 éléments → max 10 comparaisons
+▸ 1 million → max 20 comparaisons
+▸ 1 milliard → max 30 comparaisons !
+▸ La liste DOIT être triée
+▸ Retourne l'index ou -1 si non trouvé
+
+## 🌍 Pourquoi c'est important ?
+Utilisée dans les bases de données, systèmes de fichiers, jeux vidéo. Classique des entretiens techniques.`,exemple:`## 📌 Exemple 1 : Version itérative
+def recherche_binaire(liste, cible):
+    g, d = 0, len(liste)-1
+    while g <= d:
+        m = (g+d)//2
+        if liste[m] == cible:
+            return m
+        elif liste[m] < cible:
+            g = m+1
+        else:
+            d = m-1
+    return -1
+
+l = [2,5,8,12,16,23,38,56,72,91]
+print(recherche_binaire(l, 23))  # 5
+print(recherche_binaire(l, 10))  # -1
+
+## 📌 Exemple 2 : Version récursive
+def binaire_rec(l, cible, g, d):
+    if g > d:
+        return -1
+    m = (g+d)//2
+    if l[m] == cible:
+        return m
+    elif l[m] < cible:
+        return binaire_rec(l, cible, m+1, d)
+    return binaire_rec(l, cible, g, m-1)
+
+## 📌 Exemple 3 : Jeu de devinette automatique
+import random
+nombre = random.randint(1, 100)
+g, d, essais = 1, 100, 0
+while g <= d:
+    m = (g+d)//2
+    essais += 1
+    if m == nombre:
+        print(f"Trouvé {nombre} en {essais} essais !")
+        break
+    elif m < nombre:
+        g = m+1
+    else:
+        d = m-1`,exercice:`## ✏️ Exercice 1 (Facile)
+▸ Implémente la recherche binaire itérative
+▸ Liste : [1,3,5,7,9,11,13,15,17,19]
+▸ Cherche : 7 (trouvé), 10 (non trouvé), 19 (dernier)
+
+## ✏️ Exercice 2 (Moyen)
+▸ Version récursive avec compteur de comparaisons
+▸ Compare avec recherche linéaire sur 10000 éléments
+▸ Affiche : "Binaire: X comp, Linéaire: Y comp"
+
+## ✏️ Exercice 3 (Défi)
+▸ Recherche du premier élément >= cible (floor)
+▸ Compte les occurrences d'un élément dans liste triée
+▸ Mesure sur 1 million d'éléments`},
+
+"Graphes (BFS, DFS)":{cours:`## 🎯 C'est quoi ?
+Un graphe est un ensemble de nœuds reliés par des arêtes. BFS et DFS sont les deux algorithmes fondamentaux pour le parcourir.
+
+## 🔍 BFS — En largeur
+▸ Explore tous les voisins avant d'aller plus loin
+▸ Utilise une FILE (queue)
+▸ Trouve le PLUS COURT CHEMIN (graphe non pondéré)
+▸ Applications : réseaux sociaux, GPS
+
+## 🔍 DFS — En profondeur
+▸ Explore le plus loin possible avant de revenir
+▸ Utilise une PILE ou la récursion
+▸ Applications : labyrinthe, détection de cycles
+
+## 💡 Points clés
+▸ Graphe = dict Python {noeud: [voisins]}
+▸ BFS = niveau par niveau
+▸ DFS = branche par branche
+▸ Marquer les nœuds visités pour éviter les cycles
+
+## 🌍 Pourquoi c'est important ?
+Réseaux sociaux, GPS, moteurs de recherche, compilateurs — les graphes sont partout.`,exemple:`## 📌 Exemple 1 : Représentation
+graphe = {
+    "A": ["B","C"],
+    "B": ["A","D","E"],
+    "C": ["A","F"],
+    "D": ["B"],
+    "E": ["B","F"],
+    "F": ["C","E"]
+}
+
+## 📌 Exemple 2 : BFS
+from collections import deque
+
+def bfs(graphe, depart):
+    visites = []
+    file = deque([depart])
+    vus = {depart}
+    while file:
+        n = file.popleft()
+        visites.append(n)
+        for v in graphe[n]:
+            if v not in vus:
+                vus.add(v)
+                file.append(v)
+    return visites
+
+## 📌 Exemple 3 : DFS
+def dfs(graphe, noeud, vus=None):
+    if vus is None:
+        vus = set()
+    vus.add(noeud)
+    print(noeud, end=" ")
+    for v in graphe[noeud]:
+        if v not in vus:
+            dfs(graphe, v, vus)`,exercice:`## ✏️ Exercice 1 (Facile)
+Crée ce graphe :
+A--B--D
+|  |
+C--E
+▸ BFS depuis A → quel ordre ?
+▸ DFS depuis A → quel ordre ?
+▸ Quelle est la différence ?
+
+## ✏️ Exercice 2 (Moyen)
+▸ BFS pour trouver le plus court chemin entre 2 nœuds
+▸ Retourne la liste des nœuds du chemin
+▸ Retourne None si pas de chemin
+
+## ✏️ Exercice 3 (Défi)
+▸ Détecte si un graphe contient un cycle
+▸ Compte le nombre de composantes connexes
+▸ Trouve tous les chemins entre deux nœuds`},
+
+"Tables de hachage":{cours:`## 🎯 C'est quoi ?
+Une table de hachage associe des clés à des valeurs avec une recherche en O(1) en moyenne. Le dictionnaire Python EST une table de hachage.
+
+## 🔍 Comment ça marche ?
+1. Une fonction de hachage convertit la clé en un index
+2. L'index pointe vers l'emplacement de la valeur
+3. En cas de collision → chaînage ou sondage linéaire
+
+▸ hash("nom") → un entier
+▸ index = hash(clé) % taille_table
+▸ Facteur de charge → déclenchement du redimensionnement
+
+## 💡 Points clés
+▸ dict Python = table de hachage optimisée
+▸ Clés doivent être hashables (str, int, tuple) — pas list !
+▸ Recherche O(1) en moyenne
+▸ hash(x) pour voir le hash d'un objet
+
+## 🌍 Pourquoi c'est important ?
+Bases de données, caches, compilateurs — les tables de hachage sont partout. Comprendre leur fonctionnement = comprendre pourquoi Python dict est si rapide.`,exemple:`## 📌 Exemple 1 : Dict Python = Hash Table
+annuaire = {"Alice": "0712345678", "Bob": "0698765432"}
+print(annuaire["Alice"])    # O(1) !
+print("Bob" in annuaire)    # O(1) !
+print(hash("Alice"))        # Un grand entier
+
+## 📌 Exemple 2 : Hash table simple
+class HashTable:
+    def __init__(self, taille=10):
+        self.taille = taille
+        self.table = [[] for _ in range(taille)]
+
+    def _index(self, cle):
+        return hash(cle) % self.taille
+
+    def set(self, cle, valeur):
+        idx = self._index(cle)
+        for pair in self.table[idx]:
+            if pair[0] == cle:
+                pair[1] = valeur
+                return
+        self.table[idx].append([cle, valeur])
+
+    def get(self, cle):
+        for pair in self.table[self._index(cle)]:
+            if pair[0] == cle:
+                return pair[1]
+
+## 📌 Exemple 3 : Compter les mots
+def compter_mots(texte):
+    compteur = {}
+    for mot in texte.lower().split():
+        compteur[mot] = compteur.get(mot, 0) + 1
+    return sorted(compteur.items(), key=lambda x: -x[1])`,exercice:`## ✏️ Exercice 1 (Facile)
+▸ Crée un dict de 5 contacts (nom → numéro)
+▸ Recherche un contact par nom
+▸ Modifie un numéro
+▸ Supprime un contact
+▸ Vérifie si un contact existe
+
+## ✏️ Exercice 2 (Moyen)
+▸ Implémente la classe HashTable complète
+▸ Méthodes : set, get, delete, contains
+▸ Gère les collisions avec chaînage
+▸ Teste avec 20 paires clé-valeur
+
+## ✏️ Exercice 3 (Défi)
+▸ Premier caractère non répété dans une string
+▸ Vérifier si deux strings sont des anagrammes
+▸ Grouper des mots par anagrammes
+▸ Sous-tableaux avec somme = k`},
+
+"Classes et objets":{cours:`## 🎯 C'est quoi ?
+La POO (Programmation Orientée Objet) organise le code autour d'objets qui combinent données (attributs) et comportements (méthodes).
+
+## 🔍 Concepts fondamentaux
+▸ **Classe** — Le moule/plan. class NomClasse:
+▸ **Objet/Instance** — Un exemplaire créé depuis la classe
+▸ **__init__** — Constructeur, appelé à la création
+▸ **self** — Référence à l'instance actuelle
+▸ **Attribut** — Variable de l'objet (self.nom)
+▸ **Méthode** — Fonction de la classe
+▸ **__str__** — Représentation en string (print)
+
+## 💡 Points clés
+▸ PascalCase pour les noms de classes
+▸ self est toujours le premier paramètre
+▸ Attributs de classe (partagés) vs d'instance (propres)
+▸ @classmethod et @staticmethod pour les méthodes spéciales
+
+## 🌍 Pourquoi c'est important ?
+Django, Flask, PyTorch, scikit-learn — tout est orienté objet. Créer un modèle Django = hériter de Model.`,exemple:`## 📌 Exemple 1 : Classe simple
+class Etudiant:
+    def __init__(self, nom, age):
+        self.nom = nom
+        self.age = age
+        self.notes = []
+
+    def ajouter_note(self, note):
+        self.notes.append(note)
+
+    def moyenne(self):
+        if not self.notes:
+            return 0
+        return sum(self.notes) / len(self.notes)
+
+    def __str__(self):
+        return f"Étudiant: {self.nom}, Moy: {self.moyenne():.1f}"
+
+ichola = Etudiant("ICHOLA", 20)
+ichola.ajouter_note(18)
+ichola.ajouter_note(15)
+print(ichola)  # Étudiant: ICHOLA, Moy: 16.5
+
+## 📌 Exemple 2 : Attribut de classe
+class Compteur:
+    total = 0  # Partagé par toutes les instances
+
+    def __init__(self, nom):
+        self.nom = nom
+        Compteur.total += 1
+
+c1 = Compteur("Alice")
+c2 = Compteur("Bob")
+print(Compteur.total)  # 2
+
+## 📌 Exemple 3 : Méthodes spéciales
+class Vecteur:
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+
+    def __add__(self, autre):
+        return Vecteur(self.x+autre.x, self.y+autre.y)
+
+    def __str__(self):
+        return f"({self.x}, {self.y})"
+
+v1 = Vecteur(1,2)
+v2 = Vecteur(3,4)
+print(v1+v2)  # (4, 6)`,exercice:`## ✏️ Exercice 1 (Facile)
+Classe Voiture :
+▸ Attributs : marque, modele, annee, vitesse
+▸ accelerer(val) → augmente la vitesse
+▸ freiner(val) → diminue (min 0)
+▸ __str__ → "Marque Modele (Annee) - Xkm/h"
+Teste avec 2 voitures.
+
+## ✏️ Exercice 2 (Moyen)
+Classe BanqueCompte :
+▸ titulaire, solde, historique (liste)
+▸ deposer(montant)
+▸ retirer(montant) — vérifie le solde
+▸ afficher_historique()
+
+## ✏️ Exercice 3 (Défi)
+Système de bibliothèque :
+▸ Classe Livre (titre, auteur, isbn, disponible)
+▸ Classe Bibliotheque avec collection
+▸ ajouter_livre(), emprunter_livre(), retourner_livre()
+▸ chercher_par_auteur(), afficher_disponibles()
+▸ Teste avec 10 livres`},
+
+"SELECT, WHERE, ORDER BY":{cours:`## 🎯 C'est quoi ?
+SQL est le langage universel pour interroger les bases de données. SELECT, WHERE, ORDER BY sont les bases de toute requête SQL.
+
+## 🔍 Les commandes
+▸ **SELECT** — Choisir les colonnes
+  SELECT nom, age FROM etudiants
+  SELECT * FROM etudiants (toutes colonnes)
+▸ **WHERE** — Filtrer les lignes
+  WHERE age > 18
+  WHERE ville = 'Cotonou'
+  WHERE age BETWEEN 18 AND 25
+▸ **ORDER BY** — Trier
+  ORDER BY nom ASC (A→Z)
+  ORDER BY age DESC (décroissant)
+▸ **LIMIT** — Nombre de résultats
+  LIMIT 10
+
+Opérateurs WHERE : =, !=, >, <, >=, <=, LIKE, IN, AND, OR, NOT
+
+## 💡 Points clés
+▸ SQL n'est pas sensible à la casse
+▸ Les strings entre guillemets simples : 'Alice'
+▸ NULL = valeur manquante (IS NULL, IS NOT NULL)
+▸ LIKE 'A%' = commence par A
+
+## 🌍 Pourquoi c'est important ?
+Toutes les entreprises utilisent des bases de données SQL. Data analyst, data engineer, développeur backend — tout le monde a besoin de SQL.`,exemple:`## 📌 Exemple 1 : SELECT basique
+SELECT * FROM etudiants;
+SELECT nom, age, ville FROM etudiants;
+SELECT nom AS prenom, age AS annee FROM etudiants;
+
+## 📌 Exemple 2 : WHERE et filtres
+SELECT * FROM etudiants WHERE ville = 'Cotonou';
+SELECT nom, age FROM etudiants WHERE age >= 18;
+SELECT * FROM etudiants
+WHERE age >= 18 AND ville = 'Cotonou';
+SELECT * FROM etudiants WHERE nom LIKE 'M%';
+
+## 📌 Exemple 3 : ORDER BY et LIMIT
+SELECT nom, age FROM etudiants ORDER BY age ASC;
+
+SELECT nom, note FROM etudiants
+ORDER BY note DESC LIMIT 5;
+
+SELECT nom, age, note
+FROM etudiants
+WHERE age >= 18
+ORDER BY note DESC
+LIMIT 10;`,exercice:`## ✏️ Exercice 1 (Facile)
+Sur sqliteonline.com :
+▸ Crée une table etudiants (id, nom, age, ville, note)
+▸ Insère 10 étudiants
+▸ SELECT tous les étudiants
+▸ SELECT uniquement ceux de ta ville
+▸ SELECT les 5 meilleurs par note
+
+## ✏️ Exercice 2 (Moyen)
+▸ WHERE : âge entre 18 et 25
+▸ LIKE : nom commençant par une lettre
+▸ IN : ville IN ('Cotonou','Porto-Novo')
+▸ ORDER BY sur deux colonnes
+▸ IS NOT NULL
+
+## ✏️ Exercice 3 (Défi)
+Table produits (id, nom, prix, categorie, stock) :
+▸ Produits avec stock < 10
+▸ Top 3 produits les plus chers par catégorie
+▸ Produits dont le nom contient "Pro"
+▸ Prix moyen avec AVG()`},
+
+"JOINs (INNER, LEFT, RIGHT)":{cours:`## 🎯 C'est quoi ?
+Les JOINs combinent des données de plusieurs tables en utilisant une relation commune. Fondamental pour les bases de données relationnelles.
+
+## 🔍 Types de JOINs
+▸ **INNER JOIN** — Seulement les lignes correspondantes dans les DEUX tables.
+▸ **LEFT JOIN** — TOUTES les lignes de gauche + correspondances droite (NULL si absent).
+▸ **RIGHT JOIN** — Toutes les lignes de droite + correspondances gauche.
+
+Syntaxe :
+SELECT col1, col2
+FROM table1
+INNER JOIN table2 ON table1.id = table2.fk_id
+
+## 💡 Points clés
+▸ ON définit la condition de jointure
+▸ Toujours préciser la table : table.colonne
+▸ Les alias rendent le code plus lisible
+▸ LEFT JOIN pour les rapports (garder toutes les données)
+▸ Les JOINs peuvent être chaînés
+
+## 🌍 Pourquoi c'est important ?
+Dans toute base de données réelle, les données sont dans plusieurs tables. Les JOINs permettent de les combiner efficacement.`,exemple:`## 📌 Exemple 1 : INNER JOIN
+Table etudiants : id, nom, cours_id
+Table cours : id, titre, professeur
+
+SELECT e.nom, c.titre, c.professeur
+FROM etudiants e
+INNER JOIN cours c ON e.cours_id = c.id;
+
+## 📌 Exemple 2 : LEFT JOIN
+SELECT e.nom, c.titre
+FROM etudiants e
+LEFT JOIN cours c ON e.cours_id = c.id;
+-- Si pas de cours → titre = NULL
+
+## 📌 Exemple 3 : JOINs multiples
+SELECT cl.nom, p.nom, co.quantite, p.prix*co.quantite AS total
+FROM commandes co
+INNER JOIN clients cl ON co.client_id = cl.id
+INNER JOIN produits p ON co.produit_id = p.id
+WHERE cl.ville = 'Cotonou'
+ORDER BY total DESC;`,exercice:`## ✏️ Exercice 1 (Facile)
+Crée :
+▸ etudiants : id, nom, departement_id
+▸ departements : id, nom_dept, chef
+INNER JOIN : étudiant + son département
+
+## ✏️ Exercice 2 (Moyen)
+▸ Crée : clients, commandes, produits
+▸ INNER JOIN : commandes avec nom client et produit
+▸ LEFT JOIN : tous les clients, même sans commande
+▸ Montant total par client
+
+## ✏️ Exercice 3 (Défi)
+Base école : etudiants, cours, professeurs, notes
+▸ Moyenne par étudiant dans chaque cours
+▸ Professeur avec le meilleur taux de réussite
+▸ Étudiants sans aucune note`},
+
+"SQLite avec Python":{cours:`## 🎯 C'est quoi ?
+SQLite est une base de données légère intégrée dans Python. Pas de serveur à installer — le module sqlite3 est inclus nativement.
+
+## 🔍 Comment ça marche ?
+▸ sqlite3.connect('db.sqlite3') — Crée/ouvre la base
+▸ conn.cursor() — Crée un curseur
+▸ cursor.execute(sql) — Exécute une requête
+▸ conn.commit() — Sauvegarde les changements
+▸ cursor.fetchall() — Récupère tous les résultats
+▸ cursor.fetchone() — Récupère un résultat
+
+## 💡 Points clés
+▸ TOUJOURS utiliser des paramètres (?) pour les valeurs
+▸ JAMAIS : f"INSERT INTO ... VALUES ({nom})" !
+▸ conn.commit() obligatoire pour les modifications
+▸ with sqlite3.connect(...) as conn: ferme automatiquement
+
+## 🌍 Pourquoi c'est important ?
+SQLite est parfait pour les prototypes. Maîtriser SQLite te prépare à PostgreSQL et MySQL en production.`,exemple:`## 📌 Exemple 1 : Créer une table
+import sqlite3
+
+conn = sqlite3.connect('ecole.db')
+c = conn.cursor()
+c.execute("""
+    CREATE TABLE IF NOT EXISTS etudiants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nom TEXT NOT NULL,
+        age INTEGER,
+        note REAL
+    )
+""")
+conn.commit()
+conn.close()
+
+## 📌 Exemple 2 : CRUD complet
+conn = sqlite3.connect('ecole.db')
+c = conn.cursor()
+c.execute("INSERT INTO etudiants (nom,age,note) VALUES (?,?,?)", ("ICHOLA",20,18.5))
+c.execute("SELECT * FROM etudiants WHERE age > ?", (18,))
+print(c.fetchall())
+c.execute("UPDATE etudiants SET note=? WHERE nom=?", (19.0,"ICHOLA"))
+c.execute("DELETE FROM etudiants WHERE id=?", (1,))
+conn.commit()
+conn.close()
+
+## 📌 Exemple 3 : Insérer plusieurs lignes
+etudiants = [("Alice",21,16.5),("Bob",19,14.0)]
+c.executemany("INSERT INTO etudiants (nom,age,note) VALUES (?,?,?)", etudiants)
+conn.commit()`,exercice:`## ✏️ Exercice 1 (Facile)
+▸ Crée contacts.db
+▸ Table : id, nom, telephone, email
+▸ Insère 5 contacts
+▸ SELECT tous les contacts
+▸ UPDATE le numéro d'un contact
+
+## ✏️ Exercice 2 (Moyen)
+Gestionnaire de bibliothèque :
+▸ Table livres : id, titre, auteur, disponible
+▸ ajouter_livre(), emprunter_livre(), retourner_livre()
+▸ Liste des livres disponibles
+▸ Recherche par auteur
+
+## ✏️ Exercice 3 (Défi)
+▸ Tables : etudiants, cours, notes (many-to-many)
+▸ CRUD complet pour chaque table
+▸ Rapport : moyenne par étudiant, par cours
+▸ Export en CSV`},
+
+"Architecture REST":{cours:`## 🎯 C'est quoi ?
+REST (Representational State Transfer) est l'architecture standard pour les APIs web. Une API REST permet à différentes applications de communiquer via HTTP.
+
+## 🔍 Principes REST
+▸ **Ressources** — Tout est une ressource
+  /api/users → liste des utilisateurs
+  /api/users/123 → utilisateur id=123
+▸ **Méthodes HTTP** :
+  - GET → Lire
+  - POST → Créer
+  - PUT/PATCH → Modifier
+  - DELETE → Supprimer
+▸ **Stateless** — Chaque requête est indépendante
+▸ **JSON** — Format de données universel
+
+Codes de statut :
+▸ 200 OK, 201 Created, 204 No Content
+▸ 400 Bad Request, 401 Unauthorized, 404 Not Found
+▸ 500 Internal Server Error
+
+## 💡 Points clés
+▸ URLs en minuscules : /api/user-profiles
+▸ Noms au pluriel : /api/users
+▸ Versionnage : /api/v1/users
+▸ Toujours retourner le bon code de statut
+
+## 🌍 Pourquoi c'est important ?
+Toutes les apps modernes utilisent des APIs REST. Créer une API REST = créer le backend de toute application web ou mobile.`,exemple:`## 📌 Exemple 1 : Structure d'une API REST
+GET    /api/v1/etudiants      → liste tous
+GET    /api/v1/etudiants/1    → un étudiant
+POST   /api/v1/etudiants      → créer
+PUT    /api/v1/etudiants/1    → modifier
+DELETE /api/v1/etudiants/1    → supprimer
+
+## 📌 Exemple 2 : API Flask basique
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+etudiants = [{"id":1,"nom":"Alice","note":18}]
+
+@app.route('/api/v1/etudiants', methods=['GET'])
+def get_etudiants():
+    return jsonify(etudiants), 200
+
+@app.route('/api/v1/etudiants/<int:id>', methods=['GET'])
+def get_etudiant(id):
+    e = next((x for x in etudiants if x['id']==id), None)
+    if not e:
+        return jsonify({"error":"Non trouvé"}), 404
+    return jsonify(e), 200
+
+## 📌 Exemple 3 : POST et DELETE
+@app.route('/api/v1/etudiants', methods=['POST'])
+def creer():
+    data = request.json
+    nouvel = {"id":len(etudiants)+1, **data}
+    etudiants.append(nouvel)
+    return jsonify(nouvel), 201`,exercice:`## ✏️ Exercice 1 (Facile)
+▸ pip install flask
+▸ Route GET /api/hello → {"message":"Bonjour !"}
+▸ Teste dans le navigateur : localhost:5000/api/hello
+
+## ✏️ Exercice 2 (Moyen)
+API CRUD Todo list :
+▸ GET /api/todos → toutes les tâches
+▸ POST /api/todos → créer une tâche
+▸ PUT /api/todos/1 → modifier
+▸ DELETE /api/todos/1 → supprimer
+Teste avec Postman ou curl.
+
+## ✏️ Exercice 3 (Défi)
+▸ API REST complète avec SQLite
+▸ Gestion des erreurs (404, 400, 500)
+▸ Validation des données
+▸ Pagination : ?page=1&limit=10
+▸ Documentation dans un README`},
+
+"DataFrames : création, filtrage":{cours:`## 🎯 C'est quoi ?
+Pandas est LA bibliothèque Python pour l'analyse de données. Un DataFrame est un tableau 2D avec des labels — comme Excel mais en code, et 1000x plus puissant.
+
+## 🔍 Les bases
+▸ pd.read_csv() — Charger un fichier CSV
+▸ pd.DataFrame(dict) — Créer depuis un dict
+▸ df.head(n) — n premières lignes
+▸ df.info() — Infos sur le DataFrame
+▸ df.describe() — Statistiques descriptives
+▸ df[colonne] — Sélectionner une colonne
+▸ df[condition] — Filtrer des lignes
+▸ df.iloc[i] — Sélectionner par index
+
+## 💡 Points clés
+▸ import pandas as pd (convention)
+▸ df.shape → (lignes, colonnes)
+▸ df.dtypes → types des colonnes
+▸ df.isnull().sum() → valeurs manquantes
+▸ df.drop_duplicates() → supprimer doublons
+
+## 🌍 Pourquoi c'est important ?
+Pandas est utilisé par tous les data scientists. Kaggle, ML preprocessing, analyse de données — Pandas est incontournable.`,exemple:`## 📌 Exemple 1 : Créer un DataFrame
+import pandas as pd
+
+data = {
+    'nom': ['Alice','Bob','Charlie'],
+    'age': [25,30,35],
+    'salaire': [250000,350000,400000]
+}
+df = pd.DataFrame(data)
+print(df.head())
+print(df.describe())
+
+## 📌 Exemple 2 : Filtrage
+# Personnes de plus de 28 ans
+grands = df[df['age'] > 28]
+
+# Plusieurs conditions
+f = df[(df['age']>25) & (df['salaire']>300000)]
+
+# Nouvelle colonne
+df['salaire_mensuel'] = df['salaire'] / 12
+
+## 📌 Exemple 3 : Lire un CSV
+df = pd.read_csv('data.csv')
+print(df.shape)
+print(df.dtypes)
+print(df.isnull().sum())
+print(df['age'].mean())
+print(df['ville'].value_counts())`,exercice:`## ✏️ Exercice 1 (Facile)
+▸ pip install pandas
+▸ Crée un DataFrame de 5 employés (nom, age, dept, salaire)
+▸ Affiche les 3 premières lignes
+▸ Filtre les employés avec salaire > 200000
+▸ Trie par âge croissant
+
+## ✏️ Exercice 2 (Moyen)
+▸ Télécharge un CSV sur Kaggle (titanic.csv)
+▸ df.shape, df.info(), df.describe()
+▸ Combien de valeurs manquantes ?
+▸ Filtre les survivants seulement
+▸ Âge moyen des survivants vs non-survivants
+
+## ✏️ Exercice 3 (Défi)
+▸ DataFrame de 100 lignes de données fictives
+▸ Agrège par catégorie avec groupby
+▸ Gère les valeurs manquantes (fillna, dropna)
+▸ Exporte le résultat en CSV`},
+
+
+};
+
+function getDefaultCourse(topic) {
+  return {
+    cours: `## 🎯 Sujet : ${topic}
+
+Ce cours sera disponible prochainement. En attendant, voici comment l'apprendre :
+
+## 🔍 Ressources recommandées
+▸ Google : recherche "${topic} tutoriel français"
+▸ YouTube : "${topic} débutant"
+▸ ChatGPT ou Claude : "Explique-moi ${topic} simplement"
+
+## 💡 Méthode d'apprentissage
+▸ Lis une explication générale d'abord
+▸ Regarde une vidéo de démonstration
+▸ Pratique avec un petit exercice
+▸ Reviens cocher ce sujet quand tu le maîtrises
+
+## 🌍 Contexte
+Ce sujet fait partie de ta formation tech sur 48 mois. Chaque sujet compte !`,
+    exemple: `## 📌 Exemples pour : ${topic}
+
+Recherche des exemples concrets sur :
+▸ developer.mozilla.org (pour le web)
+▸ w3schools.com (tutoriels interactifs)
+▸ geeksforgeeks.org (informatique générale)
+▸ stackoverflow.com (questions/réponses)`,
+    exercice: `## ✏️ Exercices pour : ${topic}
+
+▸ **Exercice 1** : Recherche "${topic}" sur Google et lis 2 articles
+▸ **Exercice 2** : Regarde une vidéo YouTube sur le sujet
+▸ **Exercice 3** : Essaie d'expliquer le concept à voix haute sans regarder tes notes`
+  };
+}
+
+// ─────────────────────────────────────────────
+// COURSE MODAL — Static pre-written lessons
+// ─────────────────────────────────────────────
+function CourseModal({topic, phaseColor, onClose}) {
+  const [tab, setTab] = useState("cours");
+  const C = { bg:"#07080D", card:"#0F1118", border:"#1A1D2E", text:"#E2E4F0", muted:"#5A5F7A" };
+
+  const courseData = COURSES[topic] || getDefaultCourse(topic);
+  const content = courseData[tab];
+
   function renderMd(text) {
     const lines = text.split("\n");
     return lines.map((line, i) => {
-      if(line.startsWith("## ")) return <div key={i} style={{fontWeight:800,fontSize:16,color:phaseColor,margin:"16px 0 8px",borderBottom:`1px solid ${phaseColor}33`,paddingBottom:6}}>{line.replace("## ","")}</div>;
-      if(line.startsWith("**") && line.endsWith("**")) return <div key={i} style={{fontWeight:700,color:"#E2E4F0",margin:"8px 0 4px"}}>{line.replace(/\*\*/g,"")}</div>;
-      if(line.startsWith("- ") || line.startsWith("• ")) return <div key={i} style={{display:"flex",gap:8,padding:"4px 0",color:"#CCC",fontSize:13}}><span style={{color:phaseColor,flexShrink:0}}>▸</span><span>{line.replace(/^[-•] /,"")}</span></div>;
+      if(line.startsWith("## ")) return <div key={i} style={{fontWeight:800,fontSize:15,color:phaseColor,margin:"16px 0 8px",borderBottom:`1px solid ${phaseColor}33`,paddingBottom:6}}>{line.replace("## ","")}</div>;
+      if(line.startsWith("▸ **") || line.startsWith("**")) {
+        const parts = line.split("**");
+        return <div key={i} style={{display:"flex",gap:8,padding:"5px 0",alignItems:"flex-start"}}>
+          {line.startsWith("▸") && <span style={{color:phaseColor,flexShrink:0,marginTop:1}}>▸</span>}
+          <span style={{fontSize:13,color:"#CCC",lineHeight:1.6}}>
+            {parts.map((p,j)=>j%2===1?<strong key={j} style={{color:"#E2E4F0"}}>{p}</strong>:<span key={j}>{p.replace("▸ ","")}</span>)}
+          </span>
+        </div>;
+      }
+      if(line.startsWith("▸ ")) return <div key={i} style={{display:"flex",gap:8,padding:"4px 0",alignItems:"flex-start"}}><span style={{color:phaseColor,flexShrink:0,marginTop:1}}>▸</span><span style={{fontSize:13,color:"#CCC",lineHeight:1.6}}>{line.replace("▸ ","")}</span></div>;
+      if(line.startsWith("# ")) return <div key={i} style={{fontFamily:"monospace",fontSize:12,color:"#00C9A7",background:"#0A1A10",padding:"3px 8px",borderRadius:4,margin:"2px 0"}}>{line}</div>;
       if(line.trim() === "") return <div key={i} style={{height:8}}/>;
       return <div key={i} style={{color:"#CCC",fontSize:13,lineHeight:1.7,padding:"2px 0"}}>{line}</div>;
     });
@@ -357,18 +2352,16 @@ Maximum 400 mots.`
   return (
     <div style={{position:"fixed",top:0,left:0,width:"100%",height:"100%",background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}>
-      <div style={{background:C.card,width:"100%",maxWidth:700,maxHeight:"90vh",borderRadius:"20px 20px 0 0",display:"flex",flexDirection:"column",border:`1px solid ${C.border}`}}>
+      <div style={{background:C.card,width:"100%",maxWidth:700,maxHeight:"92vh",borderRadius:"20px 20px 0 0",display:"flex",flexDirection:"column",border:`1px solid ${C.border}`}}>
         
-        {/* Header */}
-        <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+        <div style={{padding:"16px 20px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0,background:`linear-gradient(135deg,${phaseColor}18,${C.card})`}}>
           <div>
-            <div style={{fontSize:10,color:phaseColor,fontWeight:700,textTransform:"uppercase",marginBottom:2}}>Cours IA</div>
-            <div style={{fontWeight:800,fontSize:16}}>{topic}</div>
+            <div style={{fontSize:10,color:phaseColor,fontWeight:700,textTransform:"uppercase",marginBottom:2,letterSpacing:"1px"}}>📚 COURS IA</div>
+            <div style={{fontWeight:800,fontSize:16,color:"#E2E4F0"}}>{topic}</div>
           </div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",cursor:"pointer",color:"#888",fontSize:22,lineHeight:1}}>×</button>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,0.1)",border:"none",cursor:"pointer",color:"#fff",fontSize:18,width:32,height:32,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         </div>
 
-        {/* Tabs */}
         <div style={{display:"flex",padding:"0 20px",borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
           {[
             {id:"cours",label:"📚 Cours"},
@@ -376,44 +2369,21 @@ Maximum 400 mots.`
             {id:"exercice",label:"✏️ Exercices"},
           ].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)} style={{
-              padding:"12px 16px",border:"none",cursor:"pointer",background:"transparent",
-              color:tab===t.id?phaseColor:"#888",fontWeight:tab===t.id?700:400,fontSize:13,
+              padding:"12px 14px",border:"none",cursor:"pointer",background:"transparent",
+              color:tab===t.id?phaseColor:"#666",fontWeight:tab===t.id?700:400,fontSize:12,
               borderBottom:`2px solid ${tab===t.id?phaseColor:"transparent"}`,
               transition:"all 0.15s",
             }}>{t.label}</button>
           ))}
         </div>
 
-        {/* Content */}
         <div style={{overflowY:"auto",padding:"20px",flex:1}}>
-          {loading && (
-            <div style={{textAlign:"center",padding:40}}>
-              <div style={{fontSize:32,marginBottom:12,animation:"spin 1s linear infinite"}}>⚙️</div>
-              <div style={{color:"#888",fontSize:14}}>Claude prépare ton cours...</div>
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </div>
-          )}
-          {error && (
-            <div style={{textAlign:"center",padding:40}}>
-              <div style={{fontSize:32,marginBottom:12}}>⚠️</div>
-              <div style={{color:"#FF6B6B",fontSize:14,marginBottom:16}}>{error}</div>
-              <button onClick={()=>loadLesson(tab)} style={{padding:"8px 20px",borderRadius:8,border:"none",cursor:"pointer",background:phaseColor,color:"#fff",fontWeight:700}}>
-                Réessayer
-              </button>
-            </div>
-          )}
-          {!loading && !error && content && (
-            <div>{renderMd(content)}</div>
-          )}
+          {renderMd(content)}
         </div>
 
-        {/* Footer */}
         <div style={{padding:"12px 20px",borderTop:`1px solid ${C.border}`,display:"flex",gap:10,flexShrink:0}}>
-          <button onClick={()=>loadLesson(tab)} style={{flex:1,padding:"10px",borderRadius:8,border:`1px solid ${C.border}`,cursor:"pointer",background:"transparent",color:"#888",fontWeight:600,fontSize:13}}>
-            🔄 Régénérer
-          </button>
-          <button onClick={onClose} style={{flex:1,padding:"10px",borderRadius:8,border:"none",cursor:"pointer",background:phaseColor,color:"#fff",fontWeight:700,fontSize:13}}>
-            ✓ Compris !
+          <button onClick={onClose} style={{flex:1,padding:"12px",borderRadius:10,border:"none",cursor:"pointer",background:`linear-gradient(135deg,${phaseColor},${phaseColor}CC)`,color:"#fff",fontWeight:700,fontSize:14}}>
+            ✓ Compris, je continue !
           </button>
         </div>
       </div>
